@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Maase — One extra meal from ma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          turmeric: '#F4A300',
+          ivory: '#F8F3E8',
+          mocha: '#5C3A21',
+          'mocha-light': '#8B6347',
+          'ivory-dark': '#EDE5D2',
+          'turmeric-light': '#FFF3D4',
+          'turmeric-dark': '#C98200',
+        },
+        fontFamily: {
+          playfair: ['"Playfair Display"', 'serif'],
+          poppins: ['Poppins', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Poppins', sans-serif; background: #F8F3E8; color: #2D1B0E; margin: 0; overflow-x: hidden; }
+  .font-playfair { font-family: 'Playfair Display', serif; }
+
+  /* Phone mockup */
+  .phone-shell {
+    width: 320px;
+    height: 640px;
+    background: #1a1a2e;
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow: 0 40px 100px rgba(92,58,33,0.4), 0 0 0 2px rgba(255,255,255,0.1), inset 0 0 0 1px rgba(255,255,255,0.05);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #F8F3E8;
+    border-radius: 34px;
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-notch {
+    width: 120px;
+    height: 28px;
+    background: #1a1a2e;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+  }
+  .screen-page { display: none; height: 100%; flex-direction: column; }
+  .screen-page.active { display: flex; }
+  .screen-scroll { flex: 1; overflow-y: auto; }
+  .screen-scroll::-webkit-scrollbar { display: none; }
+  .bottom-nav { display: flex; background: white; border-top: 1px solid #E8DDD0; padding: 8px 0 4px; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 0; position: relative; }
+  .nav-item span:first-child { font-size: 20px; }
+  .nav-item span:last-child { font-size: 10px; font-family: 'Poppins'; font-weight: 600; color: #B09278; }
+  .nav-item.active span:last-child { color: #5C3A21; }
+  .nav-indicator { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 3px; background: #F4A300; border-radius: 2px; }
+
+  /* Meal card */
+  .meal-card {
+    background: white;
+    border-radius: 16px;
+    margin: 0 12px 12px;
+    box-shadow: 0 2px 12px rgba(92,58,33,0.08);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 1.5px solid #E8DDD0;
+  }
+  .meal-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(92,58,33,0.14); }
+  .meal-emoji-area { height: 90px; display: flex; align-items: center; justify-content: center; font-size: 52px; }
+  .meal-info { padding: 10px 12px 12px; }
+  .meal-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 14px; color: #2D1B0E; line-height: 1.3; margin-bottom: 4px; }
+  .meal-meta { font-size: 11px; color: #7A5C44; font-weight: 500; }
+  .meal-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .meal-price { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #5C3A21; }
+  .add-btn { background: #F4A300; border: none; border-radius: 12px; padding: 6px 14px; font-size: 12px; font-weight: 700; font-family: 'Poppins'; color: #5C3A21; cursor: pointer; transition: background 0.15s; }
+  .add-btn:hover { background: #C98200; color: white; }
+  .add-btn.added { background: #5C3A21; color: #F4A300; }
+  .batch-pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #FFF3D4; color: #C98200; }
+
+  /* Cook avatar */
+  .cook-avatar { width: 28px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+
+  /* Filter chip */
+  .chip { padding: 5px 14px; border-radius: 99px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; border: 1.5px solid #E8DDD0; background: white; color: #7A5C44; }
+  .chip.active { background: #5C3A21; color: #F4A300; border-color: #5C3A21; }
+
+  /* Live banner */
+  .live-banner { background: #5C3A21; border-radius: 16px; padding: 12px 14px; margin: 0 12px 12px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 4px; background: #4CAF50; display: inline-block; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.2)} }
+
+  /* Detail screen */
+  .detail-hero { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 72px; background: linear-gradient(135deg, #FFF3D4 0%, #F8F3E8 100%); position: relative; }
+  .back-btn { position: absolute; top: 14px; left: 14px; width: 36px; height: 36px; background: white; border-radius: 18px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+  /* Cart */
+  .cart-item-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #E8DDD0; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 14px; background: #F8F3E8; border: 1.5px solid #E8DDD0; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: 700; transition: background 0.1s; }
+  .qty-btn:hover { background: #EDE5D2; }
+
+  /* Smooth transitions */
+  .transition-page { transition: opacity 0.2s ease; }
+
+  /* Feed neighbour modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal-box { background: white; border-radius: 28px; padding: 28px; width: 340px; text-align: center; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  /* Hero section animations */
+  .float { animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .float-slow { animation: float 4.5s ease-in-out infinite; }
+  .float-fast { animation: float 2.5s ease-in-out infinite; }
+
+  /* Gradient text */
+  .gradient-text { background: linear-gradient(135deg, #F4A300, #C98200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  /* Section reveal */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* Testimonial card */
+  .tcard { background: white; border-radius: 20px; padding: 24px; border: 1.5px solid #E8DDD0; }
+
+  /* Stats row */
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 700; color: #F4A300; }
+
+  /* Investor CTA */
+  .invest-btn { background: #F4A300; color: #5C3A21; font-weight: 700; padding: 16px 40px; border-radius: 99px; font-size: 16px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 24px rgba(244,163,0,0.4); }
+  .invest-btn:hover { background: #C98200; color: white; transform: translateY(-2px); box-shadow: 0 12px 32px rgba(244,163,0,0.5); }
+
+  /* Order flow */
+  .order-step { display: flex; align-items: flex-start; gap: 12px; }
+  .step-line { width: 2px; background: #E8DDD0; flex-grow: 1; margin: 4px 0; }
+  .step-dot { width: 20px; height: 20px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+
+  /* Scroll-based animation */
+  .hero-phone { animation: phoneIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
+  @keyframes phoneIn { from{opacity:0;transform:translateY(40px) rotate(-4deg)} to{opacity:1;transform:translateY(0) rotate(0deg)} }
+
+  /* Tag pill */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+  .tag-veg { background: #E8F5E9; color: #2E7D32; }
+  .tag-nonveg { background: #FFEBEE; color: #C62828; }
+  .tag-jain { background: #F3E5F5; color: #6A1B9A; }
+  .tag-spicy { background: #FFF3E0; color: #E65100; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #E8DDD0; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ NAV ============================================================ -->
+<nav style="position:sticky;top:0;z-index:100;background:rgba(248,243,232,0.9);backdrop-filter:blur(12px);border-bottom:1px solid #E8DDD0;">
+  <div style="max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;background:#F4A300;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">🍱</div>
+      <span class="font-playfair" style="font-size:22px;font-weight:700;color:#5C3A21;">Maase</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:32px;">
+      <a href="#features" style="font-size:14px;font-weight:500;color:#7A5C44;text-decoration:none;">Features</a>
+      <a href="#demo" style="font-size:14px;font-weight:500;color:#7A5C44;text-decoration:none;">Demo</a>
+      <a href="#pitch" style="font-size:14px;font-weight:500;color:#7A5C44;text-decoration:none;">Pitch</a>
+      <button onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})" style="background:#5C3A21;color:#F4A300;border:none;padding:10px 22px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins';">Try Demo ↓</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO ============================================================ -->
+<section style="min-height:90vh;display:flex;align-items:center;padding:60px 24px 80px;position:relative;overflow:hidden;">
+  <!-- Background blobs -->
+  <div style="position:absolute;top:-100px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(244,163,0,0.12),transparent 70%);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-80px;left:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(92,58,33,0.08),transparent 70%);border-radius:50%;pointer-events:none;"></div>
+
+  <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;width:100%;">
+    <!-- Left copy -->
+    <div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#FFF3D4;border:1.5px solid #F4A300;border-radius:99px;padding:6px 16px;margin-bottom:24px;">
+        <span style="font-size:12px;">🔥</span>
+        <span style="font-size:12px;font-weight:600;color:#C98200;">India's first home-cook marketplace</span>
+      </div>
+
+      <h1 class="font-playfair" style="font-size:clamp(42px,5vw,64px);line-height:1.1;color:#2D1B0E;margin:0 0 20px;">
+        One extra meal<br/>
+        <span class="gradient-text">from ma.</span>
+      </h1>
+
+      <p style="font-size:18px;color:#7A5C44;line-height:1.7;margin:0 0 32px;max-width:460px;">
+        Connecting urban India with home cooks — neighbors cooking real meals from family recipes. Not a restaurant. Not a cloud kitchen. <strong style="color:#5C3A21;">Maa's kitchen.</strong>
+      </p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px;">
+        <button onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})" style="background:#F4A300;color:#5C3A21;border:none;padding:16px 32px;border-radius:99px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Poppins';box-shadow:0 8px 24px rgba(244,163,0,0.35);transition:all 0.2s;" onmouseover="this.style.background='#C98200';this.style.color='white';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#F4A300';this.style.color='#5C3A21';this.style.transform='none'">
+          Try the Demo
+        </button>
+        <a href="#pitch" style="background:white;color:#5C3A21;border:1.5px solid #E8DDD0;padding:16px 32px;border-radius:99px;font-size:16px;font-weight:600;cursor:pointer;font-family:'Poppins';text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='#5C3A21'" onmouseout="this.style.borderColor='#E8DDD0'">
+          Investor Deck →
+        </a>
+      </div>
+
+      <div style="display:flex;gap:32px;">
+        <div>
+          <div class="stat-num" style="font-size:28px;">80M+</div>
+          <div style="font-size:12px;color:#7A5C44;font-weight:500;">Urban households</div>
+        </div>
+        <div style="width:1px;background:#E8DDD0;"></div>
+        <div>
+          <div class="stat-num" style="font-size:28px;">12M+</div>
+          <div style="font-size:12px;color:#7A5C44;font-weight:500;">Home cooks available</div>
+        </div>
+        <div style="width:1px;background:#E8DDD0;"></div>
+        <div>
+          <div class="stat-num" style="font-size:28px;">₹80</div>
+          <div style="font-size:12px;color:#7A5C44;font-weight:500;">Avg meal price</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: floating phone + orbiting elements -->
+    <div style="display:flex;justify-content:center;align-items:center;position:relative;height:700px;">
+      <!-- Orbiting badges -->
+      <div class="float-slow" style="position:absolute;top:80px;right:20px;background:white;border-radius:16px;padding:12px 16px;box-shadow:0 8px 24px rgba(92,58,33,0.12);border:1.5px solid #E8DDD0;z-index:10;">
+        <div style="font-size:11px;font-weight:600;color:#5C3A21;display:flex;align-items:center;gap:6px;">
+          <div style="width:8px;height:8px;border-radius:4px;background:#4CAF50;animation:pulse 1.5s infinite;"></div>
+          <span>3 Cooks Online Now</span>
+        </div>
+        <div style="font-size:10px;color:#7A5C44;margin-top:2px;">Sunita Aunty · Lakshmi Amma · Heena Ben</div>
+      </div>
+
+      <div class="float" style="position:absolute;bottom:120px;right:10px;background:#5C3A21;border-radius:16px;padding:12px 16px;box-shadow:0 8px 24px rgba(92,58,33,0.3);z-index:10;">
+        <div style="font-size:11px;font-weight:700;color:#F4A300;">New Order! 🎉</div>
+        <div style="font-size:10px;color:#EDE5D2;margin-top:2px;">Dal Makhani · ₹120</div>
+      </div>
+
+      <div class="float-fast" style="position:absolute;top:180px;left:10px;background:#FFF3D4;border-radius:16px;padding:10px 14px;border:1.5px solid #F4A300;z-index:10;">
+        <div style="font-size:11px;font-weight:600;color:#C98200;">⭐ 4.9 Rating</div>
+        <div style="font-size:10px;color:#7A5C44;margin-top:2px;">84 orders this week</div>
+      </div>
+
+      <div class="float-slow" style="position:absolute;bottom:200px;left:20px;background:white;border-radius:14px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1.5px solid #E8DDD0;z-index:10;">
+        <div style="font-size:20px;text-align:center;">🤲</div>
+        <div style="font-size:10px;font-weight:600;color:#5C3A21;text-align:center;margin-top:2px;">Fed a Neighbour</div>
+      </div>
+
+      <!-- Phone -->
+      <div class="hero-phone">
+        <div class="phone-shell" style="width:280px;height:580px;">
+          <div class="phone-screen" style="border-radius:30px;">
+            <!-- Static home preview inside hero phone -->
+            <div class="phone-notch" style="width:90px;height:22px;border-radius:0 0 16px 16px;"></div>
+            <div style="padding:10px 10px 0;overflow:hidden;height:calc(100% - 22px);">
+              <!-- Mini header -->
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div>
+                  <div style="font-size:9px;color:#7A5C44;font-weight:500;">📍 Banjara Hills, Hyd</div>
+                  <div class="font-playfair" style="font-size:15px;font-weight:700;color:#2D1B0E;">Good afternoon! 👋</div>
+                </div>
+                <div style="width:34px;height:34px;background:#FFF3D4;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid #E8DDD0;font-size:16px;">🛒</div>
+              </div>
+              <!-- Live banner -->
+              <div style="background:#5C3A21;border-radius:12px;padding:9px 11px;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+                  <div style="width:6px;height:6px;border-radius:3px;background:#4CAF50;animation:pulse 1.5s infinite;"></div>
+                  <span style="font-size:9px;font-weight:700;color:#4CAF50;letter-spacing:0.5px;">3 COOKS COOKING NOW</span>
+                </div>
+                <div class="font-playfair" style="font-size:12px;color:#F8F3E8;line-height:1.4;">"Dal Makhani at 11:30 AM" 🔥</div>
+                <div style="font-size:9px;color:#B09278;margin-top:2px;">Order now · Ready in ~25 mins</div>
+              </div>
+              <!-- Filter row -->
+              <div style="display:flex;gap:5px;margin-bottom:8px;overflow:hidden;">
+                <div style="background:#5C3A21;color:#F4A300;padding:3px 10px;border-radius:99px;font-size:9px;font-weight:700;white-space:nowrap;">All</div>
+                <div style="background:white;color:#7A5C44;padding:3px 10px;border-radius:99px;font-size:9px;font-weight:600;border:1px solid #E8DDD0;white-space:nowrap;">Veg</div>
+                <div style="background:white;color:#7A5C44;padding:3px 10px;border-radius:99px;font-size:9px;font-weight:600;border:1px solid #E8DDD0;white-space:nowrap;">Punjabi</div>
+                <div style="background:white;color:#7A5C44;padding:3px 10px;border-radius:99px;font-size:9px;font-weight:600;border:1px solid #E8DDD0;white-space:nowrap;">Kerala</div>
+              </div>
+              <!-- Mini meal cards -->
+              <div style="display:flex;flex-direction:column;gap:6px;overflow:hidden;max-height:320px;">
+                <div style="background:white;border-radius:12px;padding:9px;display:flex;gap:9px;border:1px solid #E8DDD0;">
+                  <div style="font-size:32px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:#FFF3D4;border-radius:10px;">🫕</div>
+                  <div style="flex:1;">
+                    <div class="font-playfair" style="font-size:11px;font-weight:700;color:#2D1B0E;line-height:1.3;">Dal Makhani + 3 Rotis</div>
+                    <div style="font-size:9px;color:#7A5C44;margin:2px 0;">⭐ 4.9 · Sunita Aunty · Punjabi</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
+                      <div class="font-playfair" style="font-size:13px;font-weight:700;color:#5C3A21;">₹120</div>
+                      <div style="background:#F4A300;border-radius:8px;padding:3px 10px;font-size:9px;font-weight:700;color:#5C3A21;">Add +</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:white;border-radius:12px;padding:9px;display:flex;gap:9px;border:1px solid #E8DDD0;">
+                  <div style="font-size:32px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:#FFF3D4;border-radius:10px;">🍛</div>
+                  <div style="flex:1;">
+                    <div class="font-playfair" style="font-size:11px;font-weight:700;color:#2D1B0E;line-height:1.3;">Andhra Chicken Curry</div>
+                    <div style="font-size:9px;color:#7A5C44;margin:2px 0;">⭐ 4.8 · Lakshmi Amma · Andhra</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
+                      <div class="font-playfair" style="font-size:13px;font-weight:700;color:#5C3A21;">₹160</div>
+                      <div style="background:#F4A300;border-radius:8px;padding:3px 10px;font-size:9px;font-weight:700;color:#5C3A21;">Add +</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:white;border-radius:12px;padding:9px;display:flex;gap:9px;border:1px solid #E8DDD0;">
+                  <div style="font-size:32px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:#FFF3D4;border-radius:10px;">🫓</div>
+                  <div style="flex:1;">
+                    <div class="font-playfair" style="font-size:11px;font-weight:700;color:#2D1B0E;line-height:1.3;">Methi Thepla + Pickle</div>
+                    <div style="font-size:9px;color:#7A5C44;margin:2px 0;">⭐ 5.0 · Heena Ben · Gujarati</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
+                      <div class="font-playfair" style="font-size:13px;font-weight:700;color:#5C3A21;">₹80</div>
+                      <div style="background:#F4A300;border-radius:8px;padding:3px 10px;font-size:9px;font-weight:700;color:#5C3A21;">Add +</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FEATURES ============================================================ -->
+<section id="features" style="padding:100px 24px;background:white;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:64px;" class="reveal">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#FFF3D4;border:1.5px solid #F4A300;border-radius:99px;padding:6px 16px;margin-bottom:16px;">
+        <span style="font-size:12px;font-weight:600;color:#C98200;">What makes Maase different</span>
+      </div>
+      <h2 class="font-playfair" style="font-size:44px;color:#2D1B0E;margin:0 0 16px;">Three things no one else does.</h2>
+      <p style="font-size:17px;color:#7A5C44;max-width:560px;margin:0 auto;line-height:1.7;">We're not just food delivery. We're a platform built around the soul of home cooking.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px;">
+      <!-- Feature 1 -->
+      <div class="reveal tcard" style="position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#F4A300,#C98200);"></div>
+        <div style="font-size:48px;margin-bottom:20px;">📡</div>
+        <h3 class="font-playfair" style="font-size:22px;color:#2D1B0E;margin:0 0 12px;">Cook's Kitchen Live</h3>
+        <p style="color:#7A5C44;line-height:1.7;font-size:15px;">Real-time updates when a cook starts cooking. See who's cooking, what they're making, how many portions are left, and when it'll be ready. Like a livestream — but for lunch.</p>
+        <div style="margin-top:20px;display:flex;align-items:center;gap:8px;">
+          <div style="width:8px;height:8px;border-radius:4px;background:#4CAF50;animation:pulse 1.5s infinite;"></div>
+          <span style="font-size:12px;font-weight:600;color:#4CAF50;">Live right now</span>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="reveal tcard" style="position:relative;overflow:hidden;transition-delay:0.1s;">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#5C3A21,#8B6347);"></div>
+        <div style="font-size:48px;margin-bottom:20px;">🍳</div>
+        <h3 class="font-playfair" style="font-size:22px;color:#2D1B0E;margin:0 0 12px;">Maa's Batch</h3>
+        <p style="color:#7A5C44;line-height:1.7;font-size:15px;">Every meal is a limited batch. Cooks make exactly what they planned — 5 portions, 8 portions, no more. You see the real count go down. Creates genuine scarcity and trust.</p>
+        <div style="margin-top:20px;background:#FFF3D4;border-radius:12px;padding:10px 14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:#5C3A21;">Dal Makhani batch</span>
+            <span style="font-size:12px;font-weight:700;color:#C98200;">2 of 6 left</span>
+          </div>
+          <div style="height:6px;background:#E8DDD0;border-radius:3px;overflow:hidden;">
+            <div style="width:66%;height:100%;background:#F4A300;border-radius:3px;transition:width 0.5s;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="reveal tcard" style="position:relative;overflow:hidden;transition-delay:0.2s;">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#7B5EA7,#1B6CA8);"></div>
+        <div style="font-size:48px;margin-bottom:20px;">📖</div>
+        <h3 class="font-playfair" style="font-size:22px;color:#2D1B0E;margin:0 0 12px;">Cook Story Cards</h3>
+        <p style="color:#7A5C44;line-height:1.7;font-size:15px;">Every cook shares the story behind today's dish. "Made with my mother's recipe from Ludhiana." You know who's cooking, why they made it, and where the recipe comes from.</p>
+        <div style="margin-top:20px;background:#F8F3E8;border-radius:12px;padding:12px;border-left:3px solid #F4A300;">
+          <p style="font-size:13px;color:#5C3A21;font-style:italic;line-height:1.6;margin:0;">"My grandmother's Guntur spice blend. The secret is roasting the masala fresh."<br/><strong style="font-style:normal;">— Lakshmi Amma</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ INTERACTIVE DEMO ============================================================ -->
+<section id="demo" style="padding:100px 24px;background:#F8F3E8;">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:64px;" class="reveal">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#5C3A21;border-radius:99px;padding:6px 16px;margin-bottom:16px;">
+        <span style="font-size:12px;font-weight:600;color:#F4A300;">Interactive Demo</span>
+      </div>
+      <h2 class="font-playfair" style="font-size:44px;color:#2D1B0E;margin:0 0 16px;">Try the full order flow.</h2>
+      <p style="font-size:17px;color:#7A5C44;max-width:500px;margin:0 auto;line-height:1.7;">Browse meals, add to cart, and place an order — all in the browser. Same experience as the app.</p>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:center;gap:80px;flex-wrap:wrap;">
+      <!-- Phone Mockup -->
+      <div style="position:sticky;top:100px;">
+        <div class="phone-shell">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+
+            <!-- HOME SCREEN -->
+            <div class="screen-page active" id="page-home" style="height:calc(100% - 28px);">
+              <div class="screen-scroll" style="flex:1;">
+                <div style="padding:10px 12px 0;">
+                  <!-- Header -->
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div>
+                      <div style="font-size:10px;color:#7A5C44;font-weight:500;margin-bottom:2px;">📍 Banjara Hills, Hyd ›</div>
+                      <div class="font-playfair" style="font-size:18px;font-weight:700;color:#2D1B0E;">Good afternoon! 👋</div>
+                    </div>
+                    <div onclick="showPage('cart')" style="width:38px;height:38px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid #E8DDD0;cursor:pointer;position:relative;font-size:18px;">
+                      🛒
+                      <div id="cart-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:#F4A300;width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;border:2px solid #F8F3E8;">
+                        <span id="cart-count" style="font-size:9px;font-weight:700;color:#5C3A21;">0</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Live banner -->
+                  <div class="live-banner" style="margin:0 0 10px;">
+                    <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+                      <div class="live-dot"></div>
+                      <span style="font-size:9px;font-weight:700;color:#4CAF50;letter-spacing:0.5px;">3 COOKS COOKING NOW</span>
+                    </div>
+                    <div class="font-playfair" style="font-size:14px;color:#F8F3E8;line-height:1.4;">"Sunita Aunty started Dal Makhani at 11:30 AM" 🔥</div>
+                    <div style="font-size:10px;color:#B09278;margin-top:3px;">Order now · Ready in ~25 mins</div>
+                  </div>
+
+                  <!-- Filter chips -->
+                  <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px;" id="filter-row">
+                    <div class="chip active" onclick="filterMeals('All',this)">All</div>
+                    <div class="chip" onclick="filterMeals('Veg',this)">Veg</div>
+                    <div class="chip" onclick="filterMeals('Non-Veg',this)">Non-Veg</div>
+                    <div class="chip" onclick="filterMeals('Punjabi',this)">Punjabi</div>
+                    <div class="chip" onclick="filterMeals('Kerala',this)">Kerala</div>
+                    <div class="chip" onclick="filterMeals('Gujarati',this)">Gujarati</div>
+                  </div>
+
+                  <div style="font-size:11px;font-weight:600;color:#5C3A21;margin-bottom:8px;" id="meals-count">5 meals near you 🍳</div>
+                </div>
+
+                <!-- Meal cards -->
+                <div id="meal-list" style="padding:0 0 8px;"></div>
+              </div>
+              <!-- Bottom nav -->
+              <div class="bottom-nav">
+                <div class="nav-item active" onclick="showPage('home')">
+                  <div class="nav-indicator"></div>
+                  <span>🏠</span><span>Home</span>
+                </div>
+                <div class="nav-item" onclick="showPage('cart')"><span>🛒</span><span>Cart</span></div>
+                <div class="nav-item" onclick="showPage('orders')"><span>📦</span><span>Orders</span></div>
+                <div class="nav-item" onclick="showPage('profile')"><span>👤</span><span>Profile</span></div>
+              </div>
+            </div>
+
+            <!-- MEAL DETAIL SCREEN -->
+            <div class="screen-page" id="page-detail" style="height:calc(100% - 28px);">
+              <div class="screen-scroll" style="flex:1;" id="detail-content"></div>
+              <div class="bottom-nav">
+                <div class="nav-item" onclick="showPage('home')"><span>🏠</span><span>Home</span></div>
+                <div class="nav-item" onclick="showPage('cart')"><span>🛒</span><span>Cart</span></div>
+                <div class="nav-item" onclick="showPage('orders')"><span>📦</span><span>Orders</span></div>
+                <div class="nav-item" onclick="showPage('profile')"><span>👤</span><span>Profile</span></div>
+              </div>
+            </div>
+
+            <!-- CART SCREEN -->
+            <div class="screen-page" id="page-cart" style="height:calc(100% - 28px);">
+              <div class="screen-scroll" style="flex:1;padding:12px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                  <button onclick="showPage('home')" style="background:none;border:none;font-size:18px;cursor:pointer;padding:4px;">←</button>
+                  <div class="font-playfair" style="font-size:18px;font-weight:700;">Your Cart 🛒</div>
+                </div>
+                <div id="cart-items-list"></div>
+                <div id="cart-empty" style="text-align:center;padding:40px 20px;">
+                  <div style="font-size:48px;margin-bottom:12px;">🛒</div>
+                  <div class="font-playfair" style="font-size:16px;font-weight:700;color:#2D1B0E;margin-bottom:6px;">Cart is empty</div>
+                  <div style="font-size:12px;color:#7A5C44;">Add some home-cooked goodness!</div>
+                </div>
+                <div id="cart-summary" style="display:none;">
+                  <div style="background:white;border-radius:14px;padding:14px;border:1.5px solid #E8DDD0;margin-top:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#7A5C44;margin-bottom:6px;"><span>Subtotal</span><span id="cart-sub">₹0</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#7A5C44;margin-bottom:6px;"><span>Platform fee</span><span>₹10</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#7A5C44;margin-bottom:10px;"><span>Delivery</span><span>₹25</span></div>
+                    <div style="height:1px;background:#E8DDD0;margin-bottom:10px;"></div>
+                    <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:#2D1B0E;margin-bottom:14px;"><span class="font-playfair">Total</span><span id="cart-total" class="font-playfair">₹0</span></div>
+                    <button onclick="placeOrder()" style="width:100%;background:#F4A300;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:#5C3A21;cursor:pointer;font-family:'Poppins';">Place Order ✓</button>
+                  </div>
+                </div>
+              </div>
+              <div class="bottom-nav">
+                <div class="nav-item" onclick="showPage('home')"><span>🏠</span><span>Home</span></div>
+                <div class="nav-item active" onclick="showPage('cart')">
+                  <div class="nav-indicator"></div>
+                  <span>🛒</span><span>Cart</span>
+                </div>
+                <div class="nav-item" onclick="showPage('orders')"><span>📦</span><span>Orders</span></div>
+                <div class="nav-item" onclick="showPage('profile')"><span>👤</span><span>Profile</span></div>
+              </div>
+            </div>
+
+            <!-- ORDERS SCREEN -->
+            <div class="screen-page" id="page-orders" style="height:calc(100% - 28px);">
+              <div class="screen-scroll" style="flex:1;padding:12px;">
+                <div class="font-playfair" style="font-size:20px;font-weight:700;margin-bottom:16px;">Orders 📦</div>
+                <div id="orders-list"></div>
+              </div>
+              <div class="bottom-nav">
+                <div class="nav-item" onclick="showPage('home')"><span>🏠</span><span>Home</span></div>
+                <div class="nav-item" onclick="showPage('cart')"><span>🛒</span><span>Cart</span></div>
+                <div class="nav-item active" onclick="showPage('orders')">
+                  <div class="nav-indicator"></div>
+                  <span>📦</span><span>Orders</span>
+                </div>
+                <div class="nav-item" onclick="showPage('profile')"><span>👤</span><span>Profile</span></div>
+              </div>
+            </div>
+
+            <!-- PROFILE SCREEN -->
+            <div class="screen-page" id="page-profile" style="height:calc(100% - 28px);">
+              <div class="screen-scroll" style="flex:1;padding:14px;">
+                <div style="text-align:center;padding:20px 0;">
+                  <div style="width:64px;height:64px;background:linear-gradient(135deg,#F4A300,#C98200);border-radius:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:28px;">👤</div>
+                  <div class="font-playfair" style="font-size:18px;font-weight:700;">Pradeep G.</div>
+                  <div style="font-size:12px;color:#7A5C44;margin-top:4px;">Banjara Hills, Hyderabad</div>
+                </div>
+                <div style="background:white;border-radius:14px;padding:14px;border:1.5px solid #E8DDD0;margin-bottom:12px;">
+                  <div style="font-size:11px;font-weight:700;color:#7A5C44;letter-spacing:0.5px;margin-bottom:12px;">PREFERENCES</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <span class="tag tag-veg">Veg</span>
+                    <span class="tag tag-nonveg">Non-Veg</span>
+                    <span style="background:#FFF3D4;color:#C98200;" class="tag">Spicy OK</span>
+                  </div>
+                </div>
+                <div style="background:white;border-radius:14px;padding:14px;border:1.5px solid #E8DDD0;">
+                  <div style="display:flex;justify-content:space-around;text-align:center;">
+                    <div><div class="font-playfair" style="font-size:22px;color:#F4A300;">12</div><div style="font-size:10px;color:#7A5C44;">Orders</div></div>
+                    <div><div class="font-playfair" style="font-size:22px;color:#F4A300;">3</div><div style="font-size:10px;color:#7A5C44;">Neighbors Fed</div></div>
+                    <div><div class="font-playfair" style="font-size:22px;color:#F4A300;">4.9</div><div style="font-size:10px;color:#7A5C44;">Avg Rating</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="bottom-nav">
+                <div class="nav-item" onclick="showPage('home')"><span>🏠</span><span>Home</span></div>
+                <div class="nav-item" onclick="showPage('cart')"><span>🛒</span><span>Cart</span></div>
+                <div class="nav-item" onclick="showPage('orders')"><span>📦</span><span>Orders</span></div>
+                <div class="nav-item active" onclick="showPage('profile')">
+                  <div class="nav-indicator"></div>
+                  <span>👤</span><span>Profile</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Instruction panel -->
+      <div style="max-width:440px;padding-top:20px;">
+        <div style="margin-bottom:40px;">
+          <h3 class="font-playfair" style="font-size:28px;color:#2D1B0E;margin:0 0 12px;">How it works</h3>
+          <p style="font-size:15px;color:#7A5C44;line-height:1.7;">Try the full flow — browse, filter, tap meals, add to cart, and place an order. All interactive.</p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div class="order-step">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot" style="background:#F4A300;color:#5C3A21;font-weight:700;">1</div>
+              <div class="step-line" style="height:60px;"></div>
+            </div>
+            <div style="padding-bottom:24px;">
+              <div style="font-weight:700;color:#2D1B0E;margin-bottom:4px;">Browse & filter meals</div>
+              <div style="font-size:14px;color:#7A5C44;line-height:1.6;">Use the filter chips on the phone to filter by cuisine or diet. Tap any meal card to see full details, the cook's story, and batch availability.</div>
+            </div>
+          </div>
+          <div class="order-step">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot" style="background:#5C3A21;color:#F4A300;font-weight:700;">2</div>
+              <div class="step-line" style="height:60px;"></div>
+            </div>
+            <div style="padding-bottom:24px;">
+              <div style="font-weight:700;color:#2D1B0E;margin-bottom:4px;">Add to cart</div>
+              <div style="font-size:14px;color:#7A5C44;line-height:1.6;">Tap "Add to Cart" from the detail page. Notice the live batch count goes down. Cart icon updates with a badge count. Multiple items, multiple cooks.</div>
+            </div>
+          </div>
+          <div class="order-step">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot" style="background:#F4A300;color:#5C3A21;font-weight:700;">3</div>
+              <div class="step-line" style="height:60px;"></div>
+            </div>
+            <div style="padding-bottom:24px;">
+              <div style="font-weight:700;color:#2D1B0E;margin-bottom:4px;">Checkout & track</div>
+              <div style="font-size:14px;color:#7A5C44;line-height:1.6;">See itemized bill with platform fee + delivery. Place order — it appears live in the Orders tab with real-time status simulation.</div>
+            </div>
+          </div>
+          <div class="order-step">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot" style="background:#7B5EA7;color:white;font-weight:700;">+</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:#2D1B0E;margin-bottom:4px;">Feed a Neighbour 🤲</div>
+              <div style="font-size:14px;color:#7A5C44;line-height:1.6;">On any meal detail page, tap "Feed a Neighbour" to anonymously donate a meal. Unique to Maase — community-first ordering.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick action buttons -->
+        <div style="margin-top:32px;display:flex;flex-direction:column;gap:10px;">
+          <button onclick="showPage('home')" style="background:#F8F3E8;border:1.5px solid #E8DDD0;border-radius:14px;padding:12px 20px;font-size:13px;font-weight:600;color:#5C3A21;cursor:pointer;font-family:'Poppins';text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='#F4A300'" onmouseout="this.style.borderColor='#E8DDD0'">
+            🏠 Go to Home screen
+          </button>
+          <button onclick="showPage('cart')" style="background:#F8F3E8;border:1.5px solid #E8DDD0;border-radius:14px;padding:12px 20px;font-size:13px;font-weight:600;color:#5C3A21;cursor:pointer;font-family:'Poppins';text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='#F4A300'" onmouseout="this.style.borderColor='#E8DDD0'">
+            🛒 View Cart
+          </button>
+          <button onclick="showPage('orders')" style="background:#F8F3E8;border:1.5px solid #E8DDD0;border-radius:14px;padding:12px 20px;font-size:13px;font-weight:600;color:#5C3A21;cursor:pointer;font-family:'Poppins';text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='#F4A300'" onmouseout="this.style.borderColor='#E8DDD0'">
+            📦 Track Orders
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PITCH ============================================================ -->
+<section id="pitch" style="padding:100px 24px;background:white;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:72px;" class="reveal">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#5C3A21;border-radius:99px;padding:6px 16px;margin-bottom:16px;">
+        <span style="font-size:12px;font-weight:600;color:#F4A300;">Investor Pitch</span>
+      </div>
+      <h2 class="font-playfair" style="font-size:44px;color:#2D1B0E;margin:0 0 16px;">Why Maase wins.</h2>
+      <p style="font-size:17px;color:#7A5C44;max-width:560px;margin:0 auto;line-height:1.7;">A $12B+ market no one has cracked — because everyone's building for restaurants. We're building for kitchens.</p>
+    </div>
+
+    <!-- Market stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:72px;">
+      <div class="reveal tcard" style="text-align:center;">
+        <div class="stat-num">80M+</div>
+        <div style="font-size:13px;font-weight:600;color:#5C3A21;margin-top:4px;">Urban Indian households</div>
+        <div style="font-size:12px;color:#7A5C44;margin-top:6px;line-height:1.5;">Our total addressable market for daily home-cooked meals</div>
+      </div>
+      <div class="reveal tcard" style="text-align:center;transition-delay:0.1s;">
+        <div class="stat-num">12M+</div>
+        <div style="font-size:13px;font-weight:600;color:#5C3A21;margin-top:4px;">Potential home cooks</div>
+        <div style="font-size:12px;color:#7A5C44;margin-top:6px;line-height:1.5;">Homemakers with surplus cooking capacity — untapped supply</div>
+      </div>
+      <div class="reveal tcard" style="text-align:center;transition-delay:0.2s;">
+        <div class="stat-num">₹80</div>
+        <div style="font-size:13px;font-weight:600;color:#5C3A21;margin-top:4px;">Average meal price</div>
+        <div style="font-size:12px;color:#7A5C44;margin-top:6px;line-height:1.5;">60% cheaper than Swiggy / Zomato for the same nutrition</div>
+      </div>
+      <div class="reveal tcard" style="text-align:center;transition-delay:0.3s;">
+        <div class="stat-num">₹12B</div>
+        <div style="font-size:13px;font-weight:600;color:#5C3A21;margin-top:4px;">Addressable market</div>
+        <div style="font-size:12px;color:#7A5C44;margin-top:6px;line-height:1.5;">Hyperlocal home food delivery segment by 2027</div>
+      </div>
+    </div>
+
+    <!-- Differentiators -->
+    <div style="margin-bottom:72px;">
+      <h3 class="font-playfair reveal" style="font-size:32px;color:#2D1B0E;margin:0 0 32px;text-align:center;">"No one else does this."</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+        <div class="reveal" style="display:flex;flex-direction:column;gap:12px;transition-delay:0s;">
+          <div style="width:48px;height:48px;background:#FFF3D4;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;">🏠</div>
+          <h4 style="font-size:17px;font-weight:700;color:#2D1B0E;margin:0;">Real homes, not kitchens</h4>
+          <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0;">Swiggy and Zomato list cloud kitchens and restaurants. We list real home cooks cooking real family recipes. The food is completely different — and customers can tell.</p>
+        </div>
+        <div class="reveal" style="display:flex;flex-direction:column;gap:12px;transition-delay:0.15s;">
+          <div style="width:48px;height:48px;background:#EDE5D2;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;">👩‍🍳</div>
+          <h4 style="font-size:17px;font-weight:700;color:#2D1B0E;margin:0;">Cook-first economics</h4>
+          <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0;">Cooks keep 85% of every order. No listing fees. No equipment costs. We help homemakers generate ₹8,000–25,000/month income from their existing kitchen.</p>
+        </div>
+        <div class="reveal" style="display:flex;flex-direction:column;gap:12px;transition-delay:0.3s;">
+          <div style="width:48px;height:48px;background:#FFF3D4;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;">🤲</div>
+          <h4 style="font-size:17px;font-weight:700;color:#2D1B0E;margin:0;">Community-first features</h4>
+          <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0;">"Feed a Neighbour" turns every order into a social act. Pre-book Tomorrow's Meal reduces food waste. No competitor thinks about community at the product level.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Traction / Timeline -->
+    <div class="reveal" style="background:#5C3A21;border-radius:28px;padding:48px;margin-bottom:72px;">
+      <h3 class="font-playfair" style="font-size:28px;color:#F8F3E8;margin:0 0 32px;text-align:center;">Roadmap to 10,000 orders/day</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;">
+        <div style="position:absolute;top:20px;left:10%;right:10%;height:2px;background:rgba(244,163,0,0.3);z-index:0;"></div>
+        <div style="text-align:center;position:relative;z-index:1;">
+          <div style="width:40px;height:40px;background:#F4A300;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:16px;">🚀</div>
+          <div style="font-size:11px;font-weight:700;color:#F4A300;margin-bottom:6px;">Q1 2026</div>
+          <div style="font-size:13px;color:#EDE5D2;font-weight:600;margin-bottom:4px;">MVP Launch</div>
+          <div style="font-size:11px;color:#B09278;line-height:1.4;">50 cooks · Hyderabad · 500 orders/day</div>
+        </div>
+        <div style="text-align:center;position:relative;z-index:1;">
+          <div style="width:40px;height:40px;background:rgba(244,163,0,0.3);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:16px;">🌱</div>
+          <div style="font-size:11px;font-weight:700;color:#F4A300;margin-bottom:6px;">Q3 2026</div>
+          <div style="font-size:13px;color:#EDE5D2;font-weight:600;margin-bottom:4px;">City Expansion</div>
+          <div style="font-size:11px;color:#B09278;line-height:1.4;">3 cities · 500 cooks · 5,000 orders/day</div>
+        </div>
+        <div style="text-align:center;position:relative;z-index:1;">
+          <div style="width:40px;height:40px;background:rgba(244,163,0,0.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:16px;">📈</div>
+          <div style="font-size:11px;font-weight:700;color:#F4A300;margin-bottom:6px;">Q1 2027</div>
+          <div style="font-size:13px;color:#EDE5D2;font-weight:600;margin-bottom:4px;">Series A</div>
+          <div style="font-size:11px;color:#B09278;line-height:1.4;">10 cities · 5,000 cooks · 50K orders/day</div>
+        </div>
+        <div style="text-align:center;position:relative;z-index:1;">
+          <div style="width:40px;height:40px;background:rgba(244,163,0,0.15);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:16px;">🏆</div>
+          <div style="font-size:11px;font-weight:700;color:#F4A300;margin-bottom:6px;">2028</div>
+          <div style="font-size:13px;color:#EDE5D2;font-weight:600;margin-bottom:4px;">Market Leader</div>
+          <div style="font-size:11px;color:#B09278;line-height:1.4;">Pan-India · Category creation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social proof / testimonials -->
+    <div style="margin-bottom:72px;">
+      <h3 class="font-playfair reveal" style="font-size:32px;color:#2D1B0E;margin:0 0 32px;text-align:center;">People who've tasted it love it.</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;">
+        <div class="reveal tcard" style="transition-delay:0s;">
+          <div style="display:flex;gap:3px;margin-bottom:12px;">⭐⭐⭐⭐⭐</div>
+          <p style="font-size:14px;color:#5C3A21;font-style:italic;line-height:1.7;margin:0 0 16px;">"This tastes exactly like my mother's dal. How does Sunita Aunty do this? I haven't had food like this since I left home."</p>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:#1565C0;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;">RK</div>
+            <div><div style="font-size:13px;font-weight:600;color:#2D1B0E;">Rahul Kumar</div><div style="font-size:11px;color:#7A5C44;">Software Engineer, Hyderabad</div></div>
+          </div>
+        </div>
+        <div class="reveal tcard" style="transition-delay:0.1s;">
+          <div style="display:flex;gap:3px;margin-bottom:12px;">⭐⭐⭐⭐⭐</div>
+          <p style="font-size:14px;color:#5C3A21;font-style:italic;line-height:1.7;margin:0 0 16px;">"I earn ₹18,000 extra each month cooking from my kitchen. I cook what I love, I set my own hours. Maase changed my life."</p>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:#E8825A;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;">SA</div>
+            <div><div style="font-size:13px;font-weight:600;color:#2D1B0E;">Sunita Aunty</div><div style="font-size:11px;color:#7A5C44;">Home Cook, Punjabi cuisine</div></div>
+          </div>
+        </div>
+        <div class="reveal tcard" style="transition-delay:0.2s;">
+          <div style="display:flex;gap:3px;margin-bottom:12px;">⭐⭐⭐⭐⭐</div>
+          <p style="font-size:14px;color:#5C3A21;font-style:italic;line-height:1.7;margin:0 0 16px;">"The 'Feed a Neighbour' feature is genius. I've used it 3 times already. You don't just order food — you do something good."</p>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:#388E3C;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;">AP</div>
+            <div><div style="font-size:13px;font-weight:600;color:#2D1B0E;">Ananya Prasad</div><div style="font-size:11px;color:#7A5C44;">Marketing Manager, Bengaluru</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="reveal" style="text-align:center;background:linear-gradient(135deg,#FFF3D4,#F8F3E8);border-radius:28px;padding:60px;border:1.5px solid #F4A300;">
+      <div style="font-size:48px;margin-bottom:16px;">🤝</div>
+      <h2 class="font-playfair" style="font-size:38px;color:#2D1B0E;margin:0 0 16px;">Join the journey.</h2>
+      <p style="font-size:16px;color:#7A5C44;max-width:480px;margin:0 auto 32px;line-height:1.7;">We're raising a seed round to launch in Hyderabad, hire our first 10 team members, and onboard 200 home cooks by Q2 2026.</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+        <button class="invest-btn" onclick="window.open('mailto:hello@maase.in')">Connect with us →</button>
+        <button style="background:white;color:#5C3A21;font-weight:600;padding:16px 40px;border-radius:99px;font-size:16px;border:1.5px solid #E8DDD0;cursor:pointer;font-family:'Poppins';transition:all 0.2s;" onmouseover="this.style.borderColor='#5C3A21'" onmouseout="this.style.borderColor='#E8DDD0'">
+          📄 View Full Deck
+        </button>
+      </div>
+      <div style="margin-top:28px;font-size:13px;color:#7A5C44;">
+        <span style="margin:0 16px;">✉️ hello@maase.in</span>
+        <span style="margin:0 16px;">📱 +91 99999 12345</span>
+        <span style="margin:0 16px;">🌐 maase.in</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="background:#2D1B0E;padding:40px 24px;text-align:center;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+    <div style="width:32px;height:32px;background:#F4A300;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;">🍱</div>
+    <span class="font-playfair" style="font-size:20px;font-weight:700;color:#F8F3E8;">Maase</span>
+  </div>
+  <p style="font-size:14px;color:#8B6347;margin:0;">"One extra meal from ma." — Connecting home cooks with hungry hearts across India.</p>
+  <p style="font-size:12px;color:#5C4030;margin:16px 0 0;">© 2026 Maase Technologies Pvt. Ltd. All rights reserved.</p>
+</footer>
+
+<!-- Feed Neighbour Modal -->
+<div class="modal-overlay" id="neighbour-modal" style="display:none;">
+  <div class="modal-box">
+    <div style="font-size:56px;margin-bottom:12px;">🤲</div>
+    <h3 class="font-playfair" style="font-size:24px;color:#2D1B0E;margin:0 0 10px;" id="modal-title">Feed a Neighbour</h3>
+    <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0 0 20px;" id="modal-body">Pay ₹120 to feed someone nearby anonymously. They'll receive a warm home-cooked meal from Sunita Aunty.</p>
+    <div style="display:flex;gap:10px;">
+      <button onclick="confirmNeighbour()" style="flex:1;background:#F4A300;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:700;color:#5C3A21;cursor:pointer;font-family:'Poppins';">Yes, feed them 🙏</button>
+      <button onclick="closeNeighbourModal()" style="flex:1;background:#F8F3E8;border:1.5px solid #E8DDD0;border-radius:16px;padding:14px;font-size:14px;font-weight:600;color:#5C3A21;cursor:pointer;font-family:'Poppins';">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Success Modal -->
+<div class="modal-overlay" id="order-modal" style="display:none;">
+  <div class="modal-box">
+    <div style="font-size:56px;margin-bottom:12px;">🎉</div>
+    <h3 class="font-playfair" style="font-size:22px;color:#2D1B0E;margin:0 0 10px;">Order Placed!</h3>
+    <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0 0 8px;">Your order is confirmed. Cooks will start preparing soon!</p>
+    <div style="background:#E8F5E9;border-radius:12px;padding:12px;margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#2E7D32;">Estimated delivery: 25–35 mins 🛵</div>
+    </div>
+    <button onclick="closeOrderModal()" style="width:100%;background:#5C3A21;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:700;color:#F4A300;cursor:pointer;font-family:'Poppins';">Track my order 📦</button>
+  </div>
+</div>
+
+<!-- ============================================================ JAVASCRIPT ============================================================ -->
+<script>
+const MEALS = [
+  { id:'m1', name:'Dal Makhani + 3 Rotis', emoji:'🫕', cuisine:'Punjabi', tags:['Veg','Homestyle'], cook:'Sunita Aunty', cookInitials:'SA', cookColor:'#E8825A', price:120, rating:4.9, reviews:84, eta:25, dist:0.8, batch:6, remaining:2, story:'Made this with my mother\'s recipe from Ludhiana. Always use full cream!', items:['Dal Makhani (1 serving)','Phulka Rotis (3)','Pickle','Salad'], isVeg:true },
+  { id:'m2', name:'Andhra Chicken Curry + Rice', emoji:'🍛', cuisine:'Andhra', tags:['Non-Veg','Spicy'], cook:'Lakshmi Amma', cookInitials:'LA', cookColor:'#C45C26', price:160, rating:4.8, reviews:112, eta:30, dist:1.2, batch:4, remaining:4, story:'My grandmother\'s Guntur spice blend. The secret is roasting the masala fresh.', items:['Chicken Curry (1 serving)','Steamed Rice','Rasam','Papad'], isVeg:false },
+  { id:'m3', name:'Methi Thepla + Pickle', emoji:'🫓', cuisine:'Gujarati', tags:['Veg','Jain'], cook:'Heena Ben', cookInitials:'HB', cookColor:'#7B5EA7', price:80, rating:5.0, reviews:63, eta:15, dist:0.5, batch:10, remaining:8, story:'Jain recipe, completely no-onion no-garlic. Pure and simple.', items:['Methi Thepla (4 pcs)','Mango Pickle','Yogurt'], isVeg:true },
+  { id:'m4', name:'Kerala Fish Curry + Rice', emoji:'🐟', cuisine:'Kerala', tags:['Non-Veg','Coastal'], cook:'Mary Chechi', cookInitials:'MC', cookColor:'#1B6CA8', price:190, rating:4.7, reviews:45, eta:35, dist:2.1, batch:5, remaining:3, story:'Netholi fish from the market this morning. Coconut oil, raw mango — the real way.', items:['Fish Curry (1 serving)','Red Rice','Pappadom','Pickle'], isVeg:false },
+  { id:'m5', name:'Rajma Chawal + Raita', emoji:'🍲', cuisine:'North Indian', tags:['Veg','Comfort'], cook:'Priya Didi', cookInitials:'PD', cookColor:'#388E3C', price:110, rating:4.6, reviews:77, eta:20, dist:1.5, batch:8, remaining:5, story:'Soaked the rajma overnight. No shortcuts — that\'s how maa taught me.', items:['Rajma (1 serving)','Basmati Rice','Cucumber Raita','Papad'], isVeg:true },
+];
+
+let cart = {};
+let orders = [];
+let currentFilter = 'All';
+let mealRemaining = {};
+MEALS.forEach(m => mealRemaining[m.id] = m.remaining);
+
+function cartTotal() { return Object.entries(cart).reduce((s,[id,q]) => s + q * MEALS.find(m=>m.id===id).price, 0); }
+function cartCount() { return Object.values(cart).reduce((s,q) => s+q, 0); }
+
+function updateCartBadge() {
+  const count = cartCount();
+  const badge = document.getElementById('cart-badge');
+  const countEl = document.getElementById('cart-count');
+  if(badge) {
+    if(count > 0) { badge.style.display='flex'; countEl.textContent=count; }
+    else { badge.style.display='none'; }
+  }
+}
+
+function addToCart(id) {
+  cart[id] = (cart[id]||0) + 1;
+  if(mealRemaining[id] > 0) mealRemaining[id]--;
+  updateCartBadge();
+  renderMeals(currentFilter);
+  // Update detail page if open
+  const detailPage = document.getElementById('page-detail');
+  if(detailPage && detailPage.classList.contains('active')) {
+    const meal = MEALS.find(m=>m.id===id);
+    if(meal) renderDetail(meal);
+  }
+}
+
+function removeFromCart(id) {
+  if(cart[id] > 0) { cart[id]--; if(cart[id]===0) delete cart[id]; }
+  if(mealRemaining[id] < MEALS.find(m=>m.id===id).batch) mealRemaining[id]++;
+  updateCartBadge();
+  renderCartPage();
+}
+
+function filterMeals(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('#filter-row .chip').forEach(c => c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderMeals(f);
+}
+
+function getMealTag(meal) {
+  if(meal.tags.includes('Jain')) return '<span class="tag tag-jain">Jain</span>';
+  if(meal.isVeg) return '<span class="tag tag-veg">Veg</span>';
+  return '<span class="tag tag-nonveg">Non-Veg</span>';
+}
+
+function renderMeals(filter) {
+  const list = document.getElementById('meal-list');
+  const countEl = document.getElementById('meals-count');
+  if(!list) return;
+  let meals = MEALS.filter(m => {
+    if(filter==='All') return true;
+    if(filter==='Veg') return m.isVeg;
+    if(filter==='Non-Veg') return !m.isVeg;
+    return m.tags.includes(filter) || m.cuisine===filter;
+  });
+  if(countEl) countEl.textContent = `${meals.length} meal${meals.length!==1?'s':''} near you 🍳`;
+  if(meals.length===0) {
+    list.innerHTML = `<div style="text-align:center;padding:32px 20px;"><div style="font-size:40px;margin-bottom:10px;">🍽️</div><div class="font-playfair" style="font-size:14px;font-weight:700;color:#2D1B0E;">No meals found</div><div style="font-size:11px;color:#7A5C44;margin-top:4px;">Try a different filter</div></div>`;
+    return;
+  }
+  list.innerHTML = meals.map(m => {
+    const rem = mealRemaining[m.id];
+    const isLow = rem <= 3;
+    const pct = ((m.batch - rem) / m.batch * 100).toFixed(0);
+    const inCart = cart[m.id]||0;
+    return `<div class="meal-card" onclick="openDetail('${m.id}')">
+      <div class="meal-emoji-area" style="background:linear-gradient(135deg,#FFF3D4,#F8F3E8);">${m.emoji}</div>
+      <div class="meal-info">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;">
+          <div class="meal-name" style="flex:1;">${m.name}</div>
+          ${getMealTag(m)}
+        </div>
+        <div class="meal-meta">⭐ ${m.rating} · 📍 ${m.dist}km · 🕒 ${m.eta} mins</div>
+        <div style="display:flex;align-items:center;gap:6px;margin:6px 0;">
+          <div class="cook-avatar" style="background:${m.cookColor};">${m.cookInitials}</div>
+          <span style="font-size:11px;color:#7A5C44;font-weight:500;">${m.cook}</span>
+        </div>
+        <!-- Batch bar -->
+        <div style="margin-bottom:8px;">
+          <div style="height:4px;background:#E8DDD0;border-radius:2px;overflow:hidden;margin-bottom:4px;">
+            <div style="width:${pct}%;height:100%;background:${isLow?'#E65100':'#F4A300'};border-radius:2px;transition:width 0.4s;"></div>
+          </div>
+          <div style="font-size:10px;color:${isLow?'#E65100':'#7A5C44'};font-weight:600;">${isLow?'🔥 Only ':''}${rem} of ${m.batch} left</div>
+        </div>
+        <div class="meal-bottom">
+          <div class="meal-price">₹${m.price}</div>
+          ${inCart > 0
+            ? `<div style="display:flex;align-items:center;gap:6px;">
+                <button class="qty-btn" onclick="event.stopPropagation();removeFromCart('${m.id}')">−</button>
+                <span style="font-size:13px;font-weight:700;color:#5C3A21;">${inCart}</span>
+                <button class="qty-btn" style="background:#F4A300;border-color:#F4A300;" onclick="event.stopPropagation();addToCart('${m.id}')">+</button>
+               </div>`
+            : `<button class="add-btn" onclick="event.stopPropagation();addToCart('${m.id}')">Add +</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDetail(id) {
+  const meal = MEALS.find(m => m.id === id);
+  if(!meal) return;
+  renderDetail(meal);
+  showPage('detail');
+}
+
+function renderDetail(meal) {
+  const rem = mealRemaining[meal.id];
+  const isLow = rem <= 3;
+  const pct = ((meal.batch - rem) / meal.batch * 100).toFixed(0);
+  const inCart = cart[meal.id]||0;
+  document.getElementById('detail-content').innerHTML = `
+    <div>
+      <div class="detail-hero">
+        <button class="back-btn" onclick="showPage('home')">←</button>
+        <span style="font-size:72px;">${meal.emoji}</span>
+        <div style="position:absolute;bottom:12px;right:12px;background:rgba(92,58,33,0.9);border-radius:99px;padding:4px 12px;display:flex;align-items:center;gap:5px;">
+          <div style="width:6px;height:6px;border-radius:3px;background:#4CAF50;animation:pulse 1.5s infinite;"></div>
+          <span style="font-size:10px;font-weight:700;color:#F8F3E8;">Cooked at 11:30 AM</span>
+        </div>
+      </div>
+      <div style="padding:14px;">
+        <div class="font-playfair" style="font-size:20px;font-weight:700;color:#2D1B0E;line-height:1.3;margin-bottom:6px;">${meal.name}</div>
+        <div style="font-size:11px;color:#7A5C44;margin-bottom:12px;">⭐ ${meal.rating} (${meal.reviews} reviews) · 📍 ${meal.dist}km · 🕒 ${meal.eta} mins</div>
+
+        <!-- Batch card -->
+        <div style="background:#FFF3D4;border-radius:14px;padding:12px;margin-bottom:12px;border:1px solid rgba(244,163,0,0.3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:#5C3A21;">🍳 Maa's Batch Today</span>
+            <span style="font-size:12px;font-weight:700;color:${isLow?'#E65100':'#5C3A21'}">${rem} of ${meal.batch} left</span>
+          </div>
+          <div style="height:6px;background:#E8DDD0;border-radius:3px;overflow:hidden;margin-bottom:6px;">
+            <div style="width:${pct}%;height:100%;background:${isLow?'#E65100':'#F4A300'};border-radius:3px;"></div>
+          </div>
+          <div style="font-size:10px;color:${isLow?'#E65100':'#7A5C44'}">${isLow?'🔥 Selling fast! Order before it runs out.':'Good availability — no rush!'}</div>
+        </div>
+
+        <!-- Cook card -->
+        <div style="background:white;border-radius:14px;padding:12px;margin-bottom:12px;border:1.5px solid #E8DDD0;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="cook-avatar" style="width:44px;height:44px;border-radius:22px;font-size:15px;background:${meal.cookColor};">${meal.cookInitials}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#2D1B0E;">${meal.cook}</div>
+              <div style="font-size:11px;color:#7A5C44;">Home cook · ${meal.cuisine} cuisine</div>
+              <div style="font-size:11px;color:#7A5C44;">⭐ ${meal.rating} · ${meal.reviews} orders served</div>
+            </div>
+          </div>
+          <div style="background:#F8F3E8;border-radius:10px;padding:10px;border-left:3px solid #F4A300;">
+            <div style="font-size:9px;font-weight:700;color:#B09278;letter-spacing:0.5px;margin-bottom:4px;">TODAY'S STORY</div>
+            <div style="font-size:12px;color:#5C3A21;font-style:italic;line-height:1.5;">"${meal.story}"</div>
+          </div>
+        </div>
+
+        <!-- Items included -->
+        <div style="background:white;border-radius:14px;padding:12px;margin-bottom:12px;border:1.5px solid #E8DDD0;">
+          <div style="font-size:11px;font-weight:700;color:#7A5C44;letter-spacing:0.5px;margin-bottom:8px;">WHAT'S INCLUDED</div>
+          ${meal.items.map(item => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;color:#5C3A21;"><span>✓</span> ${item}</div>`).join('')}
+        </div>
+
+        <!-- Feed a neighbour -->
+        <div onclick="openNeighbourModal('${meal.id}')" style="background:white;border-radius:14px;padding:10px 12px;margin-bottom:12px;border:1.5px dashed #E8DDD0;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#F4A300'" onmouseout="this.style.borderColor='#E8DDD0'">
+          <span style="font-size:20px;">🤲</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#5C3A21;">Feed a Neighbour</div>
+            <div style="font-size:10px;color:#7A5C44;">Pay ₹${meal.price} to feed someone nearby anonymously</div>
+          </div>
+          <span style="margin-left:auto;font-size:14px;color:#B09278;">›</span>
+        </div>
+
+        <!-- Add to cart button -->
+        <div style="position:sticky;bottom:0;background:white;padding:10px 0;border-top:1px solid #E8DDD0;margin:0 -14px;padding:10px 14px;">
+          ${inCart > 0
+            ? `<div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <button class="qty-btn" style="width:36px;height:36px;border-radius:18px;" onclick="removeFromCart('${meal.id}');renderDetail(MEALS.find(m=>m.id==='${meal.id}'))">−</button>
+                  <span style="font-size:16px;font-weight:700;color:#5C3A21;">${inCart}</span>
+                  <button class="qty-btn" style="width:36px;height:36px;border-radius:18px;background:#F4A300;border-color:#F4A300;" onclick="addToCart('${meal.id}');renderDetail(MEALS.find(m=>m.id==='${meal.id}'))">+</button>
+                </div>
+                <button onclick="showPage('cart')" style="background:#5C3A21;border:none;border-radius:14px;padding:12px 20px;font-size:13px;font-weight:700;color:#F4A300;cursor:pointer;font-family:'Poppins';">View Cart → ₹${cartTotal()}</button>
+               </div>`
+            : `<button onclick="addToCart('${meal.id}');renderDetail(MEALS.find(m=>m.id==='${meal.id}'))" style="width:100%;background:#F4A300;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#5C3A21;cursor:pointer;font-family:'Poppins';">Add to Cart — ₹${meal.price}</button>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCartPage() {
+  const list = document.getElementById('cart-items-list');
+  const empty = document.getElementById('cart-empty');
+  const summary = document.getElementById('cart-summary');
+  if(!list) return;
+  const cartMeals = Object.entries(cart).filter(([,q]) => q > 0);
+  if(cartMeals.length === 0) {
+    list.innerHTML = '';
+    if(empty) empty.style.display='block';
+    if(summary) summary.style.display='none';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  if(summary) summary.style.display='block';
+  const sub = cartTotal();
+  const total = sub + 10 + 25;
+  document.getElementById('cart-sub').textContent = '₹' + sub;
+  document.getElementById('cart-total').textContent = '₹' + total;
+  list.innerHTML = cartMeals.map(([id, qty]) => {
+    const m = MEALS.find(x => x.id===id);
+    return `<div class="cart-item-row">
+      <span style="font-size:28px;">${m.emoji}</span>
+      <div style="flex:1;">
+        <div class="font-playfair" style="font-size:12px;font-weight:700;color:#2D1B0E;line-height:1.3;">${m.name}</div>
+        <div style="font-size:10px;color:#7A5C44;">${m.cook}</div>
+        <div style="font-size:12px;font-weight:700;color:#5C3A21;margin-top:3px;">₹${m.price * qty}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="qty-btn" onclick="removeFromCart('${id}');renderCartPage()">−</button>
+        <span style="font-size:13px;font-weight:700;color:#5C3A21;">${qty}</span>
+        <button class="qty-btn" style="background:#FFF3D4;border-color:#F4A300;" onclick="addToCart('${id}');renderCartPage()">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderOrdersPage() {
+  const list = document.getElementById('orders-list');
+  if(!list) return;
+  if(orders.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">📦</div>
+      <div class="font-playfair" style="font-size:16px;font-weight:700;color:#2D1B0E;margin-bottom:6px;">No orders yet</div>
+      <div style="font-size:12px;color:#7A5C44;">Place an order to see it here!</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = orders.map(o => {
+    const statusConfig = {
+      placed:{ emoji:'📋', label:'Order Placed', color:'#78909C' },
+      accepted:{ emoji:'👩‍🍳', label:'Cook Accepted', color:'#1565C0' },
+      preparing:{ emoji:'🍳', label:'Preparing', color:'#E65100' },
+      out_for_delivery:{ emoji:'🛵', label:'On the way!', color:'#6A1B9A' },
+      delivered:{ emoji:'✅', label:'Delivered!', color:'#2E7D32' },
+    };
+    const sc = statusConfig[o.status] || statusConfig.placed;
+    return `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:10px;border:1.5px solid #E8DDD0;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:22px;">${o.emoji}</span>
+        <div style="flex:1;">
+          <div class="font-playfair" style="font-size:13px;font-weight:700;color:#2D1B0E;">${o.name}</div>
+          <div style="font-size:10px;color:#7A5C44;">#${o.id} · ₹${o.total}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;background:${sc.color}15;border-radius:8px;padding:6px 10px;">
+        <span style="font-size:14px;">${sc.emoji}</span>
+        <span style="font-size:11px;font-weight:700;color:${sc.color};">${sc.label}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function placeOrder() {
+  if(Object.keys(cart).length === 0) return;
+  const mealIds = Object.keys(cart);
+  mealIds.forEach(id => {
+    const m = MEALS.find(x => x.id===id);
+    const qty = cart[id];
+    const orderId = 'MAS' + Math.floor(1000 + Math.random()*9000);
+    orders.unshift({ id:orderId, name: m.name, emoji: m.emoji, total: m.price*qty+35, qty, status:'placed' });
+    // Simulate status progression
+    const statuses = ['placed','accepted','preparing','out_for_delivery'];
+    let si = 0;
+    const orderRef = orders[0];
+    const interval = setInterval(() => {
+      si++;
+      if(si < statuses.length) { orderRef.status = statuses[si]; renderOrdersPage(); }
+      else clearInterval(interval);
+    }, 3000);
+  });
+  cart = {};
+  updateCartBadge();
+  document.getElementById('order-modal').style.display='flex';
+  renderCartPage();
+  renderOrdersPage();
+}
+
+function closeOrderModal() {
+  document.getElementById('order-modal').style.display='none';
+  showPage('orders');
+}
+
+let currentNeighbourMeal = null;
+function openNeighbourModal(mealId) {
+  currentNeighbourMeal = mealId;
+  const meal = MEALS.find(m=>m.id===mealId);
+  document.getElementById('modal-title').textContent = 'Feed a Neighbour 🤲';
+  document.getElementById('modal-body').textContent = `Pay ₹${meal.price} to feed someone nearby anonymously. They'll receive a warm home-cooked meal from ${meal.cook}.`;
+  document.getElementById('neighbour-modal').style.display='flex';
+}
+
+function confirmNeighbour() {
+  document.getElementById('neighbour-modal').style.display='none';
+  const meal = MEALS.find(m=>m.id===currentNeighbourMeal);
+  // Show thank you
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);';
+  modal.innerHTML = `<div class="modal-box" style="animation:slideUp 0.25s ease;">
+    <div style="font-size:56px;margin-bottom:12px;">🙏</div>
+    <h3 class="font-playfair" style="font-size:22px;color:#2D1B0E;margin:0 0 10px;">You just made someone's day!</h3>
+    <p style="font-size:14px;color:#7A5C44;line-height:1.7;margin:0 0 20px;">A warm ${meal?meal.name:'meal'} from ${meal?meal.cook:'a home cook'} is on its way to someone nearby who needed it. ❤️</p>
+    <button onclick="this.closest('.modal-overlay').remove()" style="width:100%;background:#5C3A21;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:700;color:#F4A300;cursor:pointer;font-family:'Poppins';">Continue browsing</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function closeNeighbourModal() {
+  document.getElementById('neighbour-modal').style.display='none';
+}
+
+function showPage(page) {
+  document.querySelectorAll('.screen-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if(page === 'cart') renderCartPage();
+  if(page === 'orders') renderOrdersPage();
+  if(page === 'home') renderMeals(currentFilter);
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Init
+renderMeals('All');
+updateCartBadge();
+</script>
+</body>
+</html>
