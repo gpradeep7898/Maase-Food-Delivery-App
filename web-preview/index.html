@@ -53,10 +53,9 @@
     .brand { display: flex; align-items: center; gap: 14px; }
     .brand-logo {
       width: 66px; height: 66px; border-radius: 18px; flex-shrink: 0;
-      background: var(--turmeric); display: flex; align-items: center;
-      justify-content: center; font-size: 32px;
-      box-shadow: 0 10px 24px rgba(92,58,33,0.12);
+      overflow: hidden; box-shadow: 0 10px 24px rgba(92,58,33,0.12);
     }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .brand-word { font-family: 'Playfair Display', serif; font-size: 1.65rem; line-height: 1; margin-bottom: 3px; }
     .brand-tag { font-size: 0.9rem; color: var(--mocha-soft); white-space: nowrap; }
     .nav-links { display: flex; align-items: center; gap: 24px; color: var(--mocha-soft); font-weight: 500; }
@@ -348,10 +347,10 @@
     }
     .footer-brand { display: flex; align-items: center; gap: 14px; }
     .footer-logo {
-      width: 54px; height: 54px; border-radius: 16px; background: var(--turmeric);
-      display: flex; align-items: center; justify-content: center; font-size: 26px;
+      width: 54px; height: 54px; border-radius: 16px; overflow: hidden;
       box-shadow: 0 8px 18px rgba(92,58,33,0.12);
     }
+    .footer-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .footer-links { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.93rem; }
     .footer-links a:hover { color: var(--mocha); }
     .footer-copy { font-size: 0.86rem; }
@@ -406,7 +405,7 @@
 <nav class="nav">
   <div class="container nav-inner">
     <a href="#top" class="brand">
-      <div class="brand-logo">🍱</div>
+      <div class="brand-logo"><img src="logo.jpg" alt="Maase Logo" /></div>
       <div>
         <div class="brand-word">Maase</div>
         <div class="brand-tag">One Extra Meal, From Maa</div>
@@ -434,7 +433,7 @@
 
     <!-- Left -->
     <div>
-      <div class="eyebrow">🍱 Stage 1 · Trusted home-cooked meals</div>
+      <div class="eyebrow" style="display:flex;align-items:center;gap:8px;"><img src="logo.jpg" alt="" style="width:22px;height:22px;border-radius:6px;object-fit:cover;"> Stage 1 · Trusted home-cooked meals</div>
       <h1>One extra meal can create one extra income.</h1>
       <p>Maase connects nearby home cooks with customers looking for fresh, trusted homemade food. Warm Indian meals from real kitchens.</p>
       <ul class="hero-points">
@@ -757,7 +756,7 @@
   <div class="container">
     <div class="footer-inner">
       <div class="footer-brand">
-        <div class="footer-logo">🍱</div>
+        <div class="footer-logo"><img src="logo.jpg" alt="Maase Logo" /></div>
         <div>
           <div class="brand-word" style="font-size:1.3rem">Maase</div>
           <div style="font-size:0.86rem;color:var(--mocha-soft)">One Extra Meal, From Maa</div>
