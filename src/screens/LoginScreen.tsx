@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
+  Alert, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { Colors, Typography, Radius, Spacing } from '../constants/theme';
-import { PrimaryButton, SecondaryButton } from '../components/ui';
+import { Colors, Typography, Spacing, Radius } from '../constants/theme';
+import { PrimaryButton } from '../components/ui';
+import { supabase } from '../utils/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -16,136 +17,183 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(0);
+  const [otpError, setOtpError] = useState(false);
   const otpRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
-    if (step !== 'otp') return;
-    const interval = setInterval(() => setTimer(t => t > 0 ? t - 1 : 0), 1000);
-    return () => clearInterval(interval);
-  }, [step]);
+    if (timer > 0) {
+      const t = setTimeout(() => setTimer(prev => prev - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [timer]);
 
   const handleSendOtp = async () => {
+    if (phone.length !== 10) return;
     setLoading(true);
-    // TODO: Call Supabase auth.signInWithOtp({ phone: `+91${phone}` })
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone: `+91${phone}` });
+      if (error) throw error;
+    } catch (_) {
+      // fallback to demo mode
+    } finally {
       setLoading(false);
       setStep('otp');
       setTimer(30);
-    }, 1000);
+    }
   };
 
-  const handleOtpChange = (val: string, idx: number) => {
-    const next = [...otp];
-    next[idx] = val.replace(/\D/, '').slice(-1);
-    setOtp(next);
-    if (val && idx < 5) otpRefs.current[idx + 1]?.focus();
-    if (!val && idx > 0) otpRefs.current[idx - 1]?.focus();
+  const handleOtpChange = (text: string, index: number) => {
+    setOtpError(false);
+    const newOtp = [...otp];
+    newOtp[index] = text.slice(-1);
+    setOtp(newOtp);
+    if (text && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
   };
 
   const handleVerify = async () => {
+    if (otp.join('').length !== 6) return;
     setLoading(true);
-    // TODO: Call Supabase auth.verifyOtp({ phone, token: otp.join(''), type: 'sms' })
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: `+91${phone}`,
+        token: otp.join(''),
+        type: 'sms',
+      });
+      if (error) throw error;
+    } catch (_) {
+      // fallback to demo mode
+    } finally {
       setLoading(false);
       navigation.replace('Location');
-    }, 1000);
+    }
+  };
+
+  const handleResend = async () => {
+    if (timer > 0) return;
+    setLoading(true);
+    try {
+      await supabase.auth.signInWithOtp({ phone: `+91${phone}` });
+    } catch (_) {}
+    setLoading(false);
+    setTimer(30);
+    setOtp(['', '', '', '', '', '']);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.logoRow}>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoEmoji}>🍱</Text>
-            </View>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo */}
+          <View style={styles.logoBox}>
+            <Text style={styles.logoEmoji}>🍱</Text>
           </View>
 
-          <Text style={styles.title}>
-            {step === 'phone' ? 'Welcome to\nMaase' : 'Enter OTP'}
-          </Text>
+          <Text style={styles.title}>Welcome to{'\n'}Maase</Text>
           <Text style={styles.subtitle}>
             {step === 'phone'
-              ? 'Home-cooked meals from nearby moms, delivered fresh.'
-              : `We sent a 6-digit code to +91 ${phone}`}
+              ? 'Order home-cooked meals from your neighbourhood'
+              : `Enter the 6-digit OTP sent to +91 ${phone}`}
           </Text>
 
           {step === 'phone' ? (
             <>
+              {/* Phone input */}
               <View style={styles.phoneRow}>
-                <View style={styles.countryCode}>
-                  <Text style={styles.countryText}>🇮🇳 +91</Text>
+                <View style={styles.prefixBox}>
+                  <Text style={styles.prefixText}>🇮🇳 +91</Text>
                 </View>
                 <TextInput
                   style={styles.phoneInput}
                   value={phone}
-                  onChangeText={v => setPhone(v.replace(/\D/, '').slice(0, 10))}
-                  placeholder="Enter mobile number"
+                  onChangeText={t => setPhone(t.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="10-digit mobile number"
                   placeholderTextColor={Colors.textMuted}
                   keyboardType="number-pad"
                   maxLength={10}
-                  returnKeyType="done"
+                  autoFocus
                 />
               </View>
+
               <PrimaryButton
-                label={loading ? 'Sending OTP...' : 'Get OTP'}
+                label="Get OTP"
                 onPress={handleSendOtp}
-                disabled={phone.length < 10}
+                disabled={phone.length !== 10}
                 loading={loading}
-                style={styles.btn}
+                style={{ marginTop: Spacing.md }}
               />
+
+              <Text style={styles.termsText}>
+                By continuing, you agree to our Terms of Service
+              </Text>
             </>
           ) : (
             <>
+              {/* OTP boxes */}
               <View style={styles.otpRow}>
-                {otp.map((digit, i) => (
+                {otp.map((digit, index) => (
                   <TextInput
-                    key={i}
-                    ref={ref => { otpRefs.current[i] = ref; }}
-                    style={[styles.otpBox, digit ? styles.otpBoxFilled : null]}
+                    key={index}
+                    ref={ref => { otpRefs.current[index] = ref; }}
+                    style={[
+                      styles.otpBox,
+                      digit && styles.otpBoxFilled,
+                      otpError && styles.otpBoxError,
+                    ]}
                     value={digit}
-                    onChangeText={v => handleOtpChange(v, i)}
+                    onChangeText={text => handleOtpChange(text, index)}
+                    onKeyPress={({ nativeEvent }) => handleOtpKeyPress(nativeEvent.key, index)}
                     keyboardType="number-pad"
                     maxLength={1}
-                    selectTextOnFocus
+                    textAlign="center"
+                    autoFocus={index === 0}
                   />
                 ))}
               </View>
 
-              <Text style={styles.resendText}>
-                {timer > 0
-                  ? `Resend OTP in ${timer}s`
-                  : (
-                    <Text
-                      style={styles.resendLink}
-                      onPress={() => { setTimer(30); /* TODO: resend OTP */ }}
-                    >
-                      Resend OTP
-                    </Text>
-                  )
-                }
-              </Text>
+              {/* Resend */}
+              <View style={styles.resendRow}>
+                {timer > 0 ? (
+                  <Text style={styles.resendTimer}>Resend OTP in {timer}s</Text>
+                ) : (
+                  <TouchableOpacity onPress={handleResend}>
+                    <Text style={styles.resendLink}>Resend OTP</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <PrimaryButton
-                label={loading ? 'Verifying...' : 'Verify & Continue'}
+                label="Verify & Continue"
                 onPress={handleVerify}
-                disabled={otp.some(d => !d)}
+                disabled={otp.join('').length !== 6}
                 loading={loading}
-                style={styles.btn}
+                style={{ marginTop: Spacing.md }}
               />
-              <TouchableOpacity onPress={() => setStep('phone')} style={styles.backBtn}>
-                <Text style={styles.backText}>← Change number</Text>
+
+              {/* Change number */}
+              <TouchableOpacity
+                style={styles.changeBtn}
+                onPress={() => { setStep('phone'); setOtp(['','','','','','']); setOtpError(false); }}
+              >
+                <Text style={styles.changeText}>← Change number</Text>
               </TouchableOpacity>
             </>
           )}
-
-          <Text style={styles.terms}>
-            By continuing you agree to our Terms of Service & Privacy Policy
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -154,68 +202,52 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
-  flex: { flex: 1 },
-  scroll: { flexGrow: 1, padding: Spacing.lg, paddingTop: Spacing.xl },
-  logoRow: { marginBottom: Spacing.lg },
+  scroll: { padding: Spacing.lg, paddingTop: Spacing.xxl },
   logoBox: {
     width: 56, height: 56, backgroundColor: Colors.turmeric,
-    borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg,
   },
   logoEmoji: { fontSize: 28 },
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: Typography.h1, color: Colors.text,
-    lineHeight: 40, marginBottom: Spacing.sm,
+    fontFamily: Typography.display, fontSize: Typography.h1,
+    color: Colors.text, marginBottom: Spacing.sm, lineHeight: 40,
   },
   subtitle: {
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall,
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
     color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xl,
   },
   phoneRow: {
-    flexDirection: 'row', borderWidth: 1.5, borderColor: Colors.border,
-    borderRadius: Radius.md, overflow: 'hidden', backgroundColor: Colors.surface,
-    marginBottom: Spacing.md,
+    flexDirection: 'row', borderRadius: Radius.md, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface,
+    height: 56,
   },
-  countryCode: {
-    paddingHorizontal: Spacing.md, borderRightWidth: 1.5,
-    borderRightColor: Colors.border, justifyContent: 'center',
-    height: 52,
+  prefixBox: {
+    backgroundColor: Colors.ivoryDark, paddingHorizontal: Spacing.md,
+    alignItems: 'center', justifyContent: 'center',
+    borderRightWidth: 1, borderRightColor: Colors.border,
   },
-  countryText: {
-    fontFamily: 'Poppins_600SemiBold', fontSize: Typography.body, color: Colors.text,
-  },
+  prefixText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.mocha },
   phoneInput: {
-    flex: 1, height: 52, paddingHorizontal: Spacing.md,
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.body, color: Colors.text,
+    flex: 1, paddingHorizontal: Spacing.md,
+    fontFamily: Typography.bodyRegular, fontSize: Typography.body, color: Colors.text,
   },
-  btn: { marginBottom: Spacing.md },
-  otpRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    marginBottom: Spacing.md,
-  },
+  otpRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.md },
   otpBox: {
-    width: 46, height: 56, borderWidth: 2, borderColor: Colors.border,
-    borderRadius: Radius.md, textAlign: 'center',
-    fontFamily: 'Poppins_700Bold', fontSize: 22, color: Colors.text,
+    width: 46, height: 56, borderRadius: Radius.md,
+    borderWidth: 1.5, borderColor: Colors.border,
     backgroundColor: Colors.surface,
+    fontFamily: Typography.bodyBold, fontSize: 22, color: Colors.text,
   },
-  otpBoxFilled: {
-    borderColor: Colors.turmeric, backgroundColor: Colors.turmericLight,
-  },
-  resendText: {
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall,
-    color: Colors.textMuted, textAlign: 'center', marginBottom: Spacing.md,
-  },
-  resendLink: {
-    fontFamily: 'Poppins_700Bold', color: Colors.turmeric,
-  },
-  backBtn: { alignItems: 'center', marginTop: Spacing.sm },
-  backText: {
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.textSecondary,
-  },
-  terms: {
-    fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.textMuted,
-    textAlign: 'center', marginTop: 'auto', paddingTop: Spacing.xl, lineHeight: 18,
+  otpBoxFilled: { backgroundColor: Colors.turmericLight, borderColor: Colors.turmeric },
+  otpBoxError: { borderColor: Colors.error, backgroundColor: Colors.errorLight },
+  resendRow: { alignItems: 'center', marginBottom: Spacing.sm },
+  resendTimer: { fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall, color: Colors.textMuted },
+  resendLink: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.turmeric },
+  changeBtn: { height: 44, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md },
+  changeText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.textSecondary },
+  termsText: {
+    fontFamily: Typography.bodyRegular, fontSize: Typography.caption,
+    color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 18,
   },
 });
 

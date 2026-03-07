@@ -1,4 +1,4 @@
-import { Meal, Order, Cook } from '../types';
+import { Cook, Meal, Order, OrderStatus } from '../types';
 
 export const MOCK_COOKS: Cook[] = [
   {
@@ -9,7 +9,7 @@ export const MOCK_COOKS: Cook[] = [
     rating: 4.9,
     totalOrders: 84,
     cuisine: 'Punjabi',
-    story: 'Made this with my mother\'s recipe from Ludhiana. Always use full cream!',
+    story: "Made this with my mother's recipe from Ludhiana. Always use full cream!",
   },
   {
     id: 'c2',
@@ -19,7 +19,7 @@ export const MOCK_COOKS: Cook[] = [
     rating: 4.8,
     totalOrders: 112,
     cuisine: 'Andhra',
-    story: 'My grandmother\'s Guntur spice blend. The secret is roasting the masala fresh.',
+    story: "My grandmother's Guntur spice blend. The secret is roasting the masala fresh.",
   },
   {
     id: 'c3',
@@ -29,7 +29,7 @@ export const MOCK_COOKS: Cook[] = [
     rating: 5.0,
     totalOrders: 63,
     cuisine: 'Gujarati',
-    story: 'Jain recipe, completely no-onion no-garlic. Pure and simple.',
+    story: 'Jain recipe — completely no-onion no-garlic. Pure and simple.',
   },
   {
     id: 'c4',
@@ -49,7 +49,7 @@ export const MOCK_COOKS: Cook[] = [
     rating: 4.6,
     totalOrders: 77,
     cuisine: 'North Indian',
-    story: 'Soaked the rajma overnight. No shortcuts — that\'s how maa taught me.',
+    story: "Soaked the rajma overnight. No shortcuts — that's how maa taught me.",
   },
 ];
 
@@ -57,8 +57,7 @@ export const MOCK_MEALS: Meal[] = [
   {
     id: 'm1',
     name: 'Dal Makhani + 3 Rotis',
-    description:
-      'Slow-cooked black lentils in a rich tomato-cream gravy, served with freshly made phulkas. A family favourite that Sunita Aunty has been making for 20 years.',
+    description: 'Slow-cooked black lentils in a rich tomato-cream gravy, served with freshly made phulkas.',
     price: 120,
     emoji: '🫕',
     cuisine: 'Punjabi',
@@ -77,8 +76,7 @@ export const MOCK_MEALS: Meal[] = [
   {
     id: 'm2',
     name: 'Andhra Chicken Curry + Rice',
-    description:
-      'Fiery Andhra-style chicken curry with freshly ground Guntur chilli masala, served with steamed sona masuri rice. Authentically spicy.',
+    description: 'Fiery Andhra-style chicken with freshly ground Guntur chilli masala.',
     price: 160,
     emoji: '🍛',
     cuisine: 'Andhra',
@@ -88,7 +86,7 @@ export const MOCK_MEALS: Meal[] = [
     etaMinutes: 30,
     rating: 4.8,
     reviewCount: 112,
-    items: ['Chicken Curry (1 serving)', 'Steamed Rice', 'Rasam', 'Papad'],
+    items: ['Chicken Curry', 'Steamed Rice', 'Rasam', 'Papad'],
     batchTotal: 4,
     batchRemaining: 4,
     cookedAt: '12:00 PM',
@@ -97,8 +95,7 @@ export const MOCK_MEALS: Meal[] = [
   {
     id: 'm3',
     name: 'Methi Thepla + Pickle',
-    description:
-      'Soft, fresh methi theplas made with fenugreek leaves and whole wheat flour. Jain-friendly — no onion, no garlic.',
+    description: 'Soft fresh theplas made with fenugreek leaves and whole wheat. Jain-friendly.',
     price: 80,
     emoji: '🫓',
     cuisine: 'Gujarati',
@@ -117,8 +114,7 @@ export const MOCK_MEALS: Meal[] = [
   {
     id: 'm4',
     name: 'Kerala Fish Curry + Rice',
-    description:
-      'Traditional Kerala fish curry with raw mango, coconut milk, and fresh curry leaves. Cooked in pure coconut oil.',
+    description: 'Traditional Kerala fish curry with raw mango and coconut milk. Pure coconut oil.',
     price: 190,
     emoji: '🐟',
     cuisine: 'Kerala',
@@ -128,7 +124,7 @@ export const MOCK_MEALS: Meal[] = [
     etaMinutes: 35,
     rating: 4.7,
     reviewCount: 45,
-    items: ['Fish Curry (1 serving)', 'Red Rice', 'Pappadom', 'Pickle'],
+    items: ['Fish Curry', 'Red Rice', 'Pappadom', 'Pickle'],
     batchTotal: 5,
     batchRemaining: 3,
     cookedAt: '12:30 PM',
@@ -137,8 +133,7 @@ export const MOCK_MEALS: Meal[] = [
   {
     id: 'm5',
     name: 'Rajma Chawal + Raita',
-    description:
-      'Slow-cooked kidney beans in a tangy tomato-onion gravy. Served with fluffy basmati rice and cooling cucumber raita.',
+    description: 'Slow-cooked kidney beans in tangy tomato-onion gravy with fluffy basmati rice.',
     price: 110,
     emoji: '🍲',
     cuisine: 'North Indian',
@@ -148,7 +143,7 @@ export const MOCK_MEALS: Meal[] = [
     etaMinutes: 20,
     rating: 4.6,
     reviewCount: 77,
-    items: ['Rajma (1 serving)', 'Basmati Rice', 'Cucumber Raita', 'Papad'],
+    items: ['Rajma', 'Basmati Rice', 'Cucumber Raita', 'Papad'],
     batchTotal: 8,
     batchRemaining: 5,
     cookedAt: '11:00 AM',
@@ -158,78 +153,43 @@ export const MOCK_MEALS: Meal[] = [
 
 export const MOCK_ORDERS: Order[] = [
   {
-    id: 'MAS2847',
+    id: 'MAS1234',
     meal: MOCK_MEALS[0],
     quantity: 1,
     status: 'delivered',
-    total: 155,
-    placedAt: 'Today, 12:34 PM',
-    deliveryAddress: 'Banjara Hills, Hyderabad',
-    estimatedDelivery: '1:05 PM',
+    total: 165,
+    placedAt: '2026-03-05T12:30:00Z',
+    deliveryAddress: '12, Green Park, Banjara Hills',
   },
   {
-    id: 'MAS2801',
+    id: 'MAS5678',
     meal: MOCK_MEALS[1],
-    quantity: 1,
+    quantity: 2,
     status: 'preparing',
-    total: 195,
-    placedAt: 'Today, 12:30 PM',
-    deliveryAddress: 'Banjara Hills, Hyderabad',
-    estimatedDelivery: '1:15 PM',
+    total: 345,
+    placedAt: '2026-03-06T13:00:00Z',
+    deliveryAddress: '12, Green Park, Banjara Hills',
   },
   {
-    id: 'MAS2745',
+    id: 'MAS9012',
     meal: MOCK_MEALS[2],
-    quantity: 2,
+    quantity: 1,
     status: 'delivered',
-    total: 175,
-    placedAt: 'Yesterday, 7:30 PM',
-    deliveryAddress: 'Banjara Hills, Hyderabad',
-    estimatedDelivery: '8:00 PM',
+    total: 125,
+    placedAt: '2026-03-04T11:45:00Z',
+    deliveryAddress: '12, Green Park, Banjara Hills',
   },
 ];
 
 export const CUISINE_FILTERS = [
-  'All',
-  'Veg',
-  'Non-Veg',
-  'Punjabi',
-  'Andhra',
-  'Gujarati',
-  'Jain',
-  'Kerala',
-  'North Indian',
+  'All', 'Veg', 'Non-Veg', 'Punjabi', 'Andhra', 'Gujarati', 'Jain', 'Kerala', 'North Indian',
 ];
 
-export const ORDER_STATUS_CONFIG = {
-  placed: {
-    label: 'Order Placed',
-    emoji: '📋',
-    color: '#78909C',
-  },
-  accepted: {
-    label: 'Cook Accepted',
-    emoji: '👩‍🍳',
-    color: '#1565C0',
-  },
-  preparing: {
-    label: 'Preparing',
-    emoji: '🍳',
-    color: '#E65100',
-  },
-  out_for_delivery: {
-    label: 'Out for Delivery',
-    emoji: '🛵',
-    color: '#6A1B9A',
-  },
-  delivered: {
-    label: 'Delivered!',
-    emoji: '✅',
-    color: '#2E7D32',
-  },
-  cancelled: {
-    label: 'Cancelled',
-    emoji: '❌',
-    color: '#C62828',
-  },
+export const ORDER_STATUS_CONFIG: Record<string, { label: string; emoji: string; color: string }> = {
+  placed:           { label: 'Order Placed',      emoji: '📋', color: '#78909C' },
+  accepted:         { label: 'Cook Accepted',      emoji: '👩‍🍳', color: '#1565C0' },
+  preparing:        { label: 'Preparing',          emoji: '🍳', color: '#E65100' },
+  out_for_delivery: { label: 'Out for Delivery',   emoji: '🛵', color: '#6A1B9A' },
+  delivered:        { label: 'Delivered!',         emoji: '✅', color: '#2E7D32' },
+  cancelled:        { label: 'Cancelled',          emoji: '❌', color: '#C62828' },
 };

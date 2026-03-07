@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  FlatList, StyleSheet, Text, TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { HomeStackParamList, CartItem } from '../types';
-import { Colors, Typography, Radius, Spacing } from '../constants/theme';
+import { Colors, Typography, Spacing, Radius, Shadows } from '../constants/theme';
 import { PrimaryButton, Divider } from '../components/ui';
 import { calculateCart, updateQuantity, removeFromCart } from '../utils/cart';
 
@@ -17,63 +19,57 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
 
   if (cartItems.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Your Cart</Text>
+          <View style={{ width: 32 }} />
+        </View>
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🛒</Text>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text style={styles.emptySubtitle}>Find something delicious nearby</Text>
+          <Text style={styles.emptySubtitle}>Add some delicious home-cooked meals</Text>
           <PrimaryButton
-            label="Browse Meals"
+            label="Browse meals"
             onPress={() => navigation.goBack()}
-            style={styles.browseBtn}
+            style={{ marginTop: Spacing.xl, marginHorizontal: Spacing.lg }}
           />
         </View>
       </SafeAreaView>
     );
   }
 
-  const feeRows = [
-    ['Subtotal', cart.subtotal],
-    ['Platform fee', cart.platformFee],
-    ['Delivery fee', cart.deliveryFee],
-    [`GST (5%)`, cart.gst],
-  ] as [string, number][];
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Your Cart</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
       <FlatList
         data={cartItems}
         keyExtractor={item => item.meal.id}
+        contentContainerStyle={styles.list}
         ListHeaderComponent={() => (
-          <>
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.back}>←</Text>
-              </TouchableOpacity>
-              <Text style={styles.title}>Your Cart</Text>
-              <View style={{ width: 24 }} />
-            </View>
-
-            {/* Delivery address */}
-            <View style={styles.addressCard}>
-              <Text style={styles.addressEmoji}>📍</Text>
-              <View style={styles.addressInfo}>
-                <Text style={styles.addressLabel}>DELIVERING TO</Text>
-                <Text style={styles.addressText}>Banjara Hills, Hyderabad</Text>
-              </View>
-              <TouchableOpacity>
-                <Text style={styles.changeText}>Change</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.sectionTitle}>Order Items</Text>
-          </>
+          <View style={styles.addressCard}>
+            <Text style={styles.addressLabel}>📍 DELIVERING TO</Text>
+            <Text style={styles.addressText}>12, Green Park, Banjara Hills, Hyderabad</Text>
+            <TouchableOpacity>
+              <Text style={styles.changeLink}>Change</Text>
+            </TouchableOpacity>
+          </View>
         )}
         renderItem={({ item }) => (
-          <View style={styles.cartItem}>
+          <View style={styles.itemRow}>
             <Text style={styles.itemEmoji}>{item.meal.emoji}</Text>
             <View style={styles.itemInfo}>
-              <Text style={styles.itemName} numberOfLines={2}>{item.meal.name}</Text>
-              <Text style={styles.itemCook}>{item.meal.cook.name} · ₹{item.meal.price} each</Text>
+              <Text style={styles.itemName} numberOfLines={1}>{item.meal.name}</Text>
+              <Text style={styles.itemCook}>{item.meal.cook.name}</Text>
             </View>
             <View style={styles.qtyRow}>
               <TouchableOpacity
@@ -84,33 +80,42 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
               </TouchableOpacity>
               <Text style={styles.qty}>{item.quantity}</Text>
               <TouchableOpacity
-                style={[styles.qtyBtn, styles.qtyBtnPlus]}
+                style={[styles.qtyBtn, styles.qtyBtnAdd]}
                 onPress={() => setCartItems(updateQuantity(cartItems, item.meal.id, 1))}
               >
                 <Text style={[styles.qtyBtnText, { color: Colors.mocha }]}>+</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.itemTotal}>₹{item.meal.price * item.quantity}</Text>
+            <Text style={styles.itemPrice}>₹{item.meal.price * item.quantity}</Text>
           </View>
         )}
+        ItemSeparatorComponent={() => <Divider style={{ marginHorizontal: Spacing.md }} />}
         ListFooterComponent={() => (
-          <View style={styles.breakdown}>
-            <Text style={styles.sectionTitle}>Price Breakdown</Text>
-            {feeRows.map(([label, val]) => (
-              <View key={label} style={styles.feeRow}>
-                <Text style={styles.feeLabel}>{label}</Text>
-                <Text style={styles.feeVal}>₹{val}</Text>
-              </View>
-            ))}
-            <Divider style={{ marginVertical: Spacing.sm }} />
-            <View style={styles.feeRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalVal}>₹{cart.total}</Text>
+          <View style={styles.billCard}>
+            <Text style={styles.billTitle}>Price Details</Text>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Subtotal</Text>
+              <Text style={styles.billValue}>₹{cart.subtotal}</Text>
             </View>
-            <View style={{ height: 100 }} />
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Platform fee</Text>
+              <Text style={styles.billValue}>₹{cart.platformFee}</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Delivery</Text>
+              <Text style={styles.billValue}>₹{cart.deliveryFee}</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>GST (5%)</Text>
+              <Text style={styles.billValue}>₹{cart.gst}</Text>
+            </View>
+            <Divider style={{ marginVertical: Spacing.sm }} />
+            <View style={styles.billRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>₹{cart.total}</Text>
+            </View>
           </View>
         )}
-        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
 
@@ -126,50 +131,67 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
-  list: { padding: Spacing.md, paddingBottom: 0 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-  emptyEmoji: { fontSize: 64 },
-  emptyTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h2, color: Colors.text },
-  emptySubtitle: { fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.textMuted },
-  browseBtn: { width: 200, marginTop: Spacing.md },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
-  back: { fontSize: 24, color: Colors.text, width: 24 },
-  title: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h2, color: Colors.text },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  backText: { fontSize: 24, color: Colors.text, width: 32 },
+  headerTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
+  emptyEmoji: { fontSize: 64, marginBottom: Spacing.md },
+  emptyTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
+  emptySubtitle: {
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
+    color: Colors.textMuted, marginTop: 6, textAlign: 'center',
+  },
+  list: { padding: Spacing.md, paddingBottom: 100 },
   addressCard: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.turmericLight, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md,
+    backgroundColor: Colors.turmericLight, borderRadius: Radius.lg,
+    padding: Spacing.md, marginBottom: Spacing.md,
   },
-  addressEmoji: { fontSize: 22 },
-  addressInfo: { flex: 1 },
-  addressLabel: { fontFamily: 'Poppins_700Bold', fontSize: 10, color: Colors.textMuted },
-  addressText: { fontFamily: 'Poppins_600SemiBold', fontSize: Typography.bodySmall, color: Colors.text },
-  changeText: { fontFamily: 'Poppins_700Bold', fontSize: Typography.bodySmall, color: Colors.turmeric },
-  sectionTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.text, marginBottom: Spacing.sm },
-  cartItem: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.surface, borderRadius: Radius.lg,
-    padding: Spacing.sm, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border,
+  addressLabel: {
+    fontFamily: Typography.bodyBold, fontSize: Typography.tiny,
+    color: Colors.textMuted, letterSpacing: 0.5, marginBottom: 4,
   },
-  itemEmoji: { fontSize: 36 },
-  itemInfo: { flex: 1 },
-  itemName: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.bodySmall, color: Colors.text },
-  itemCook: { fontFamily: 'Poppins_400Regular', fontSize: Typography.caption, color: Colors.textSecondary },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  addressText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.mocha },
+  changeLink: {
+    fontFamily: Typography.bodySemiBold, fontSize: Typography.caption,
+    color: Colors.turmeric, marginTop: 4,
+  },
+  itemRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  itemEmoji: { fontSize: 36, marginRight: Spacing.sm },
+  itemInfo: { flex: 1, marginRight: Spacing.sm },
+  itemName: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.text },
+  itemCook: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textMuted },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginRight: Spacing.sm },
   qtyBtn: {
-    width: 28, height: 28, borderRadius: 14, borderWidth: 1.5,
-    borderColor: Colors.border, alignItems: 'center', justifyContent: 'center',
+    width: 32, height: 32, borderRadius: 16,
+    borderWidth: 1.5, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
   },
-  qtyBtnPlus: { backgroundColor: Colors.turmeric, borderColor: Colors.turmeric },
-  qtyBtnText: { fontFamily: 'Poppins_700Bold', fontSize: 16, color: Colors.mocha },
-  qty: { fontFamily: 'Poppins_700Bold', fontSize: Typography.body, color: Colors.text, minWidth: 16, textAlign: 'center' },
-  itemTotal: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 15, color: Colors.mocha, minWidth: 44, textAlign: 'right' },
-  breakdown: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
-  feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
-  feeLabel: { fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.textSecondary },
-  feeVal: { fontFamily: 'Poppins_600SemiBold', fontSize: Typography.bodySmall, color: Colors.text },
-  totalLabel: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.text },
-  totalVal: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.mocha },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border, padding: Spacing.md, paddingBottom: 24 },
+  qtyBtnAdd: { backgroundColor: Colors.turmeric, borderColor: Colors.turmeric },
+  qtyBtnText: { fontFamily: Typography.bodyBold, fontSize: 18, color: Colors.textSecondary },
+  qty: { fontFamily: Typography.bodyBold, fontSize: Typography.body, color: Colors.text, minWidth: 20, textAlign: 'center' },
+  itemPrice: { fontFamily: Typography.display, fontSize: 16, color: Colors.mocha },
+  billCard: {
+    backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md,
+    marginTop: Spacing.md, borderWidth: 1, borderColor: Colors.border,
+  },
+  billTitle: { fontFamily: Typography.display, fontSize: 17, color: Colors.text, marginBottom: Spacing.md },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
+  billLabel: { fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall, color: Colors.textSecondary },
+  billValue: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.text },
+  totalLabel: { fontFamily: Typography.display, fontSize: Typography.body, color: Colors.text },
+  totalValue: { fontFamily: Typography.display, fontSize: Typography.body, color: Colors.mocha },
+  bottomBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    padding: Spacing.md, backgroundColor: Colors.surface,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+  },
 });
 
 export default CartScreen;

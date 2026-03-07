@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, FlatList,
-  ScrollView, TouchableOpacity, StyleSheet,
+  FlatList, RefreshControl, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { HomeStackParamList, CartItem, Meal } from '../types';
-import { Colors, Typography, Radius, Spacing } from '../constants/theme';
+import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 import { FilterChip, SectionHeader } from '../components/ui';
 import MealCard from '../components/MealCard';
+import MaaOnlineBanner from '../components/MaaOnlineBanner';
+import TomorrowSection from '../components/TomorrowSection';
 import { MOCK_MEALS, CUISINE_FILTERS } from '../constants/mockData';
 import { addToCart, getItemCount } from '../utils/cart';
 
@@ -17,26 +19,34 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Home'> & {
   setCartItems: (items: CartItem[]) => void;
 };
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning! 👋';
+  if (hour < 17) return 'Good afternoon! 👋';
+  return 'Good evening! 👋';
+}
+
 const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) => {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const cartCount = getItemCount(cartItems);
 
   const filteredMeals = MOCK_MEALS.filter(meal => {
     const matchFilter = filter === 'All' || meal.tags.includes(filter) || meal.cuisine === filter;
-    const matchSearch =
+    const matchSearch = !search ||
       meal.name.toLowerCase().includes(search.toLowerCase()) ||
       meal.cook.name.toLowerCase().includes(search.toLowerCase()) ||
       meal.cuisine.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
-  const handleAdd = (meal: Meal) => {
-    setCartItems(addToCart(cartItems, meal));
-  };
+  const handleAdd = (meal: Meal) => setCartItems(addToCart(cartItems, meal));
+  const getCartQty = (mealId: string) => cartItems.find(i => i.meal.id === mealId)?.quantity ?? 0;
 
-  const getCartQty = (mealId: string) => {
-    return cartItems.find(i => i.meal.id === mealId)?.quantity ?? 0;
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
   return (
@@ -44,6 +54,7 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
       <FlatList
         data={filteredMeals}
         keyExtractor={item => item.id}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.turmeric} />}
         ListHeaderComponent={() => (
           <>
             {/* Header */}
@@ -54,7 +65,7 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
                 <Text style={styles.locationChevron}>›</Text>
               </View>
               <View style={styles.headerBottom}>
-                <Text style={styles.greeting}>Good afternoon! 👋</Text>
+                <Text style={styles.greeting}>{getGreeting()}</Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('Cart')}
                   style={styles.cartBtn}
@@ -69,17 +80,8 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
               </View>
             </View>
 
-            {/* Cook's Kitchen Live banner — unique Maase feature */}
-            <View style={styles.liveBanner}>
-              <View style={styles.liveDotRow}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveDotLabel}>3 COOKS COOKING NOW</Text>
-              </View>
-              <Text style={styles.liveQuote}>
-                "Sunita Aunty started cooking{'\n'}Dal Makhani at 11:30 AM" 🔥
-              </Text>
-              <Text style={styles.liveSubtext}>Order now · Ready in ~25 mins</Text>
-            </View>
+            {/* Maa Online Banner */}
+            <MaaOnlineBanner />
 
             {/* Search */}
             <View style={styles.searchRow}>
@@ -93,7 +95,7 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
               />
             </View>
 
-            {/* Filters */}
+            {/* Filter chips */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -133,6 +135,12 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
             <Text style={styles.emptySubtitle}>Try a different filter or search</Text>
           </View>
         )}
+        ListFooterComponent={() => (
+          <View style={{ paddingTop: Spacing.lg }}>
+            <TomorrowSection />
+            <View style={{ height: Spacing.xl }} />
+          </View>
+        )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
@@ -146,30 +154,44 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   locationPin: { fontSize: 13 },
-  locationText: { fontFamily: 'Poppins_600SemiBold', fontSize: Typography.caption, color: Colors.textSecondary },
+  locationText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.caption, color: Colors.textSecondary },
   locationChevron: { fontSize: 16, color: Colors.textMuted },
   headerBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h3, color: Colors.text },
-  cartBtn: { width: 44, height: 44, backgroundColor: Colors.surface, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  greeting: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
+  cartBtn: {
+    width: 44, height: 44, backgroundColor: Colors.surface,
+    borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
   cartEmoji: { fontSize: 20 },
-  cartBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: Colors.turmeric, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.ivory },
-  cartBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 10, color: Colors.mocha },
-  liveBanner: { marginHorizontal: Spacing.md, backgroundColor: Colors.mocha, borderRadius: Radius.xl, padding: Spacing.md, marginBottom: Spacing.md },
-  liveDotRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50' },
-  liveDotLabel: { fontFamily: 'Poppins_700Bold', fontSize: 11, color: '#4CAF50' },
-  liveQuote: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.ivory, lineHeight: 24, marginBottom: 4 },
-  liveSubtext: { fontFamily: 'Poppins_400Regular', fontSize: Typography.caption, color: Colors.textMuted },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md, marginHorizontal: Spacing.md, marginBottom: Spacing.md, height: 48 },
+  cartBadge: {
+    position: 'absolute', top: -6, right: -6,
+    backgroundColor: Colors.turmeric, width: 20, height: 20,
+    borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: Colors.ivory,
+  },
+  cartBadgeText: { fontFamily: Typography.bodyBold, fontSize: 10, color: Colors.mocha },
+  searchRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border,
+    borderRadius: Radius.md, paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.md, marginBottom: Spacing.md, height: 48,
+  },
   searchIcon: { fontSize: 16 },
-  searchInput: { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.text },
+  searchInput: {
+    flex: 1, fontFamily: Typography.bodyRegular,
+    fontSize: Typography.bodySmall, color: Colors.text,
+  },
   filters: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
   sectionHeader: { paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
   cardWrapper: { paddingHorizontal: Spacing.md },
   empty: { alignItems: 'center', paddingVertical: Spacing.xxl },
   emptyEmoji: { fontSize: 52, marginBottom: Spacing.md },
-  emptyTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h3, color: Colors.text },
-  emptySubtitle: { fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.textMuted, marginTop: 6 },
+  emptyTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
+  emptySubtitle: {
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
+    color: Colors.textMuted, marginTop: 6,
+  },
 });
 
 export default HomeScreen;

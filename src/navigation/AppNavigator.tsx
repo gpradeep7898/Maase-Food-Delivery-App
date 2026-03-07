@@ -1,9 +1,12 @@
-import React from 'react';
-import { Text } from 'react-native';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { RootStackParamList, MainTabParamList, HomeStackParamList, CartItem } from '../types';
+import { Text } from 'react-native';
+
+import {
+  RootStackParamList, HomeStackParamList, MainTabParamList, CartItem,
+} from '../types';
 import { Colors, Typography } from '../constants/theme';
 
 // Screens
@@ -12,17 +15,18 @@ import LoginScreen from '../screens/LoginScreen';
 import LocationScreen from '../screens/LocationScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MealDetailScreen from '../screens/MealDetailScreen';
-import { PaymentScreen, OrderConfirmationScreen, OrderTrackingScreen } from '../screens/PaymentAndTracking';
 import CartScreen from '../screens/CartScreen';
-import { OrdersScreen, ProfileScreen } from '../screens/OrdersAndProfile';
+import PaymentScreen from '../screens/PaymentScreen';
+import OrderConfirmationScreen from '../screens/OrderConfirmationScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
+import OrdersScreen from '../screens/OrdersScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// ============================================================
-// HOME STACK (nested navigator inside Home tab)
-// ============================================================
+// HomeStack navigator — passes cart state down as props
 function HomeStackNavigator({
   cartItems,
   setCartItems,
@@ -50,9 +54,7 @@ function HomeStackNavigator({
   );
 }
 
-// ============================================================
-// MAIN TABS
-// ============================================================
+// MainTabs — bottom tab navigator
 function MainTabs({
   cartItems,
   setCartItems,
@@ -76,7 +78,7 @@ function MainTabs({
         tabBarActiveTintColor: Colors.turmeric,
         tabBarInactiveTintColor: Colors.textMuted,
         tabBarLabelStyle: {
-          fontFamily: 'Poppins_700Bold',
+          fontFamily: Typography.bodyBold,
           fontSize: 10,
         },
       }}
@@ -84,46 +86,43 @@ function MainTabs({
       <Tab.Screen
         name="HomeTab"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>🏠</Text>,
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🏠</Text>,
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: Colors.turmeric,
-            color: Colors.mocha,
-            fontFamily: 'Poppins_700Bold',
-            fontSize: 10,
-          },
+          tabBarBadgeStyle: { backgroundColor: Colors.turmeric, color: Colors.mocha },
         }}
       >
-        {props => <HomeStackNavigator {...props} cartItems={cartItems} setCartItems={setCartItems} />}
+        {props => (
+          <HomeStackNavigator
+            {...props}
+            cartItems={cartItems}
+            setCartItems={setCartItems}
+          />
+        )}
       </Tab.Screen>
-
       <Tab.Screen
         name="OrdersTab"
         component={OrdersScreen}
         options={{
-          title: 'Orders',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>📦</Text>,
+          tabBarLabel: 'Orders',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>🍱</Text>,
         }}
       />
-
       <Tab.Screen
         name="ProfileTab"
         component={ProfileScreen}
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22 }}>👤</Text>,
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 22, color }}>👤</Text>,
         }}
       />
     </Tab.Navigator>
   );
 }
 
-// ============================================================
-// ROOT NAVIGATOR
-// ============================================================
+// Root navigator
 export default function AppNavigator() {
-  const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   return (
     <NavigationContainer>

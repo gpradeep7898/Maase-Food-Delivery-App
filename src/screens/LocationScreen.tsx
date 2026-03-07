@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  Alert, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Location from 'expo-location';
 import { RootStackParamList } from '../types';
-import { Colors, Typography, Radius, Spacing } from '../constants/theme';
+import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 import { PrimaryButton, SecondaryButton } from '../components/ui';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Location'>;
@@ -12,102 +15,116 @@ const LocationScreen: React.FC<Props> = ({ navigation }) => {
   const [mode, setMode] = useState<'prompt' | 'manual'>('prompt');
   const [line1, setLine1] = useState('');
   const [area, setArea] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleAutoLocation = async () => {
-    // TODO: Use expo-location to get coordinates
-    // const { status } = await Location.requestForegroundPermissionsAsync();
-    // if (status === 'granted') {
-    //   const loc = await Location.getCurrentPositionAsync({});
-    //   navigate to main tabs with location
-    // }
+  const handleUseLocation = async () => {
+    setLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission denied',
+          'Location access is needed to find cooks near you. You can enter your address manually.',
+          [{ text: 'Enter manually', onPress: () => setMode('manual') }, { text: 'OK' }]
+        );
+        setLoading(false);
+        return;
+      }
+      await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      navigation.replace('MainTabs');
+    } catch (_) {
+      navigation.replace('MainTabs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmManual = () => {
+    if (!line1.trim() || !area.trim()) return;
     navigation.replace('MainTabs');
   };
 
-  const handleManualSubmit = () => {
-    if (!line1 || !area) return;
-    navigation.replace('MainTabs');
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      {mode === 'prompt' ? (
+  if (mode === 'manual') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.content}>
-          <Text style={styles.emoji}>📍</Text>
-          <Text style={styles.title}>Where are you?</Text>
-          <Text style={styles.subtitle}>
-            We'll find home cooks within 3km of you — fresh meals, just around the corner.
-          </Text>
-          <PrimaryButton
-            label="📍  Use My Location"
-            onPress={handleAutoLocation}
-            style={styles.btn}
-          />
-          <SecondaryButton
-            label="Enter address manually"
-            onPress={() => setMode('manual')}
-            style={styles.btn}
-          />
-        </View>
-      ) : (
-        <View style={styles.manualContent}>
-          <TouchableOpacity onPress={() => setMode('prompt')} style={styles.back}>
-            <Text style={styles.backText}>←  Back</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setMode('prompt')}>
+            <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Enter your address</Text>
-          <Text style={styles.subtitle}>So we can find cooks near you</Text>
+          <Text style={styles.subtitle}>We'll find home cooks within 3km of you</Text>
 
           <TextInput
             style={styles.input}
             value={line1}
             onChangeText={setLine1}
-            placeholder="Flat no, building, street..."
+            placeholder="Flat / Building / Street"
             placeholderTextColor={Colors.textMuted}
           />
           <TextInput
-            style={[styles.input, { marginBottom: Spacing.lg }]}
+            style={[styles.input, { marginTop: Spacing.sm }]}
             value={area}
             onChangeText={setArea}
-            placeholder="Area, city (e.g. Banjara Hills, Hyderabad)"
+            placeholder="Area / City"
             placeholderTextColor={Colors.textMuted}
           />
+
           <PrimaryButton
             label="Confirm Location"
-            onPress={handleManualSubmit}
-            disabled={!line1 || !area}
+            onPress={handleConfirmManual}
+            disabled={!line1.trim() || !area.trim()}
+            style={{ marginTop: Spacing.lg }}
           />
         </View>
-      )}
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.content}>
+        <Text style={styles.pinEmoji}>📍</Text>
+        <Text style={styles.title}>Find meals near you</Text>
+        <Text style={styles.subtitle}>
+          Maase connects you with home cooks within 3km. Allow location for the best experience.
+        </Text>
+
+        <PrimaryButton
+          label="📍 Use My Location"
+          onPress={handleUseLocation}
+          loading={loading}
+          style={{ marginBottom: Spacing.md }}
+        />
+
+        <SecondaryButton
+          label="Enter address manually"
+          onPress={() => setMode('manual')}
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
-  content: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    padding: Spacing.lg,
-  },
-  manualContent: {
-    flex: 1, padding: Spacing.lg, paddingTop: Spacing.md,
-  },
-  emoji: { fontSize: 72, marginBottom: Spacing.lg },
+  content: { flex: 1, padding: Spacing.lg, justifyContent: 'center' },
+  pinEmoji: { fontSize: 64, textAlign: 'center', marginBottom: Spacing.lg },
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h2,
+    fontFamily: Typography.display, fontSize: Typography.h2,
     color: Colors.text, textAlign: 'center', marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall,
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
     color: Colors.textSecondary, textAlign: 'center', lineHeight: 22,
-    marginBottom: Spacing.xl, maxWidth: 280,
+    marginBottom: Spacing.xl,
   },
-  btn: { width: '100%', marginBottom: Spacing.sm },
-  back: { marginBottom: Spacing.lg },
-  backText: { fontFamily: 'Poppins_600SemiBold', fontSize: Typography.body, color: Colors.textSecondary },
+  backBtn: { marginBottom: Spacing.lg },
+  backText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.textSecondary },
   input: {
-    height: 52, borderWidth: 1.5, borderColor: Colors.border,
-    borderRadius: Radius.md, paddingHorizontal: Spacing.md,
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.body,
-    color: Colors.text, backgroundColor: Colors.surface, marginBottom: Spacing.sm,
+    height: 52, backgroundColor: Colors.surface, borderRadius: Radius.md,
+    borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: Spacing.md,
+    fontFamily: Typography.bodyRegular, fontSize: Typography.body, color: Colors.text,
   },
 });
 

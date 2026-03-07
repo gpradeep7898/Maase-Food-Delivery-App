@@ -1,13 +1,12 @@
-import React from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-} from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { HomeStackParamList, CartItem, Meal } from '../types';
-import { Colors, Typography, Radius, Spacing } from '../constants/theme';
-import { PrimaryButton, CookAvatar } from '../components/ui';
-import { addToCart, getItemCount } from '../utils/cart';
+import { HomeStackParamList, CartItem } from '../types';
+import { Colors, Typography, Spacing, Radius } from '../constants/theme';
+import { CookAvatar, PrimaryButton } from '../components/ui';
+import FeedANeighbour from '../components/FeedANeighbour';
+import { addToCart } from '../utils/cart';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'MealDetail'> & {
   cartItems: CartItem[];
@@ -16,11 +15,10 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'MealDetail'> & {
 
 const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCartItems }) => {
   const { meal } = route.params;
+  const [feedModalVisible, setFeedModalVisible] = useState(false);
   const inCart = cartItems.find(i => i.meal.id === meal.id)?.quantity ?? 0;
   const batchPct = ((meal.batchTotal - meal.batchRemaining) / meal.batchTotal) * 100;
   const isLowStock = meal.batchRemaining <= 3;
-
-  const handleAdd = () => setCartItems(addToCart(cartItems, meal));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -40,9 +38,11 @@ const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCa
         <View style={styles.content}>
           {/* Title & meta */}
           <Text style={styles.mealName}>{meal.name}</Text>
-          <Text style={styles.meta}>⭐ {meal.rating} ({meal.reviewCount} reviews) · 📍 {meal.distanceKm}km · 🕒 {meal.etaMinutes} mins</Text>
+          <Text style={styles.meta}>
+            ⭐ {meal.rating} ({meal.reviewCount} reviews) · 📍 {meal.distanceKm}km · 🕒 {meal.etaMinutes} mins
+          </Text>
 
-          {/* Maa's Batch — unique Maase feature */}
+          {/* Maa's Batch */}
           <View style={styles.batchCard}>
             <View style={styles.batchTop}>
               <Text style={styles.batchTitle}>🍳 Maa's Batch Today</Text>
@@ -71,7 +71,6 @@ const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCa
                 <Text style={styles.cookSub}>⭐ {meal.cook.rating} · {meal.cook.totalOrders} orders served</Text>
               </View>
             </View>
-            {/* Cook Story — unique Maase feature */}
             {meal.cook.story && (
               <View style={styles.storyBox}>
                 <Text style={styles.storyLabel}>TODAY'S STORY</Text>
@@ -84,7 +83,7 @@ const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCa
           <Text style={styles.sectionTitle}>About this meal</Text>
           <Text style={styles.description}>{meal.description}</Text>
 
-          {/* Items included */}
+          {/* Items */}
           <Text style={styles.sectionTitle}>What you get</Text>
           {meal.items.map((item, i) => (
             <View key={i} style={styles.itemRow}>
@@ -102,11 +101,19 @@ const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCa
             ))}
           </View>
 
+          {/* Feed a Neighbour trigger */}
+          <TouchableOpacity
+            style={styles.feedTrigger}
+            onPress={() => setFeedModalVisible(true)}
+          >
+            <Text style={styles.feedTriggerText}>🤲 Feed a neighbour</Text>
+          </TouchableOpacity>
+
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
 
-      {/* Fixed bottom CTA */}
+      {/* Fixed bottom bar */}
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.priceLabel}>Price</Text>
@@ -119,10 +126,20 @@ const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCa
               onPress={() => navigation.navigate('Cart')}
             />
           ) : (
-            <PrimaryButton label="Add to Cart" onPress={handleAdd} />
+            <PrimaryButton
+              label="Add to Cart"
+              onPress={() => setCartItems(addToCart(cartItems, meal))}
+            />
           )}
         </View>
       </View>
+
+      {/* Feed a Neighbour modal */}
+      <FeedANeighbour
+        meal={meal}
+        visible={feedModalVisible}
+        onClose={() => setFeedModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -148,14 +165,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
   heroBadgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4CAF50' },
-  heroBadgeText: { fontFamily: 'Poppins_700Bold', fontSize: 12, color: Colors.ivory },
+  heroBadgeText: { fontFamily: Typography.bodyBold, fontSize: 12, color: Colors.ivory },
   content: { padding: Spacing.md },
   mealName: {
-    fontFamily: 'PlayfairDisplay_700Bold', fontSize: Typography.h2,
+    fontFamily: Typography.display, fontSize: Typography.h2,
     color: Colors.text, marginBottom: 6,
   },
   meta: {
-    fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall,
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
     color: Colors.textSecondary, marginBottom: Spacing.md,
   },
   batchCard: {
@@ -163,43 +180,64 @@ const styles = StyleSheet.create({
     padding: Spacing.md, marginBottom: Spacing.md,
   },
   batchTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
-  batchTitle: { fontFamily: 'Poppins_700Bold', fontSize: Typography.bodySmall, color: Colors.mocha },
-  batchCount: { fontFamily: 'Poppins_700Bold', fontSize: Typography.bodySmall },
-  batchBar: { height: 8, backgroundColor: Colors.ivoryDark, borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  batchTitle: { fontFamily: Typography.bodyBold, fontSize: Typography.bodySmall, color: Colors.mocha },
+  batchCount: { fontFamily: Typography.bodyBold, fontSize: Typography.bodySmall },
+  batchBar: {
+    height: 8, backgroundColor: Colors.ivoryDark,
+    borderRadius: 4, overflow: 'hidden', marginBottom: 6,
+  },
   batchFill: { height: '100%', borderRadius: 4 },
-  batchNote: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: Colors.textMuted },
+  batchNote: { fontFamily: Typography.bodyRegular, fontSize: 11, color: Colors.textMuted },
   cookCard: {
     backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md,
     marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.border,
   },
   cookTop: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
   cookInfo: { flex: 1, justifyContent: 'center' },
-  cookName: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.text, marginBottom: 2 },
-  cookSub: { fontFamily: 'Poppins_400Regular', fontSize: Typography.caption, color: Colors.textSecondary },
+  cookName: { fontFamily: Typography.display, fontSize: 17, color: Colors.text, marginBottom: 2 },
+  cookSub: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textSecondary },
   storyBox: {
     backgroundColor: Colors.ivory, borderRadius: Radius.md, padding: 12,
     borderLeftWidth: 3, borderLeftColor: Colors.turmeric,
   },
   storyLabel: {
-    fontFamily: 'Poppins_700Bold', fontSize: 10, color: Colors.textMuted,
+    fontFamily: Typography.bodyBold, fontSize: 10, color: Colors.textMuted,
     marginBottom: 4, letterSpacing: 0.5,
   },
-  storyText: { fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.mocha, fontStyle: 'italic', lineHeight: 20 },
-  sectionTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, color: Colors.text, marginBottom: Spacing.sm, marginTop: Spacing.md },
-  description: { fontFamily: 'Poppins_400Regular', fontSize: Typography.bodySmall, color: Colors.textSecondary, lineHeight: 22 },
+  storyText: {
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
+    color: Colors.mocha, fontStyle: 'italic', lineHeight: 20,
+  },
+  sectionTitle: {
+    fontFamily: Typography.display, fontSize: 17, color: Colors.text,
+    marginBottom: Spacing.sm, marginTop: Spacing.md,
+  },
+  description: {
+    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
+    color: Colors.textSecondary, lineHeight: 22,
+  },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.sm },
   itemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.turmeric },
-  itemText: { fontFamily: 'Poppins_400Regular', fontSize: Typography.body, color: Colors.text },
+  itemText: { fontFamily: Typography.bodyRegular, fontSize: Typography.body, color: Colors.text },
   tagsRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', marginTop: Spacing.md },
-  tag: { backgroundColor: Colors.turmericLight, borderRadius: Radius.full, paddingHorizontal: 12, paddingVertical: 4 },
-  tagText: { fontFamily: 'Poppins_700Bold', fontSize: Typography.caption, color: Colors.mocha },
+  tag: {
+    backgroundColor: Colors.turmericLight, borderRadius: Radius.full,
+    paddingHorizontal: 12, paddingVertical: 4,
+  },
+  tagText: { fontFamily: Typography.bodyBold, fontSize: Typography.caption, color: Colors.mocha },
+  feedTrigger: {
+    alignItems: 'center', marginTop: Spacing.lg, paddingVertical: Spacing.sm,
+  },
+  feedTriggerText: {
+    fontFamily: Typography.bodyRegular, fontSize: 13, color: Colors.mocha,
+  },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border,
     padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
   },
-  priceLabel: { fontFamily: 'Poppins_400Regular', fontSize: Typography.caption, color: Colors.textMuted },
-  price: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 22, color: Colors.mocha },
+  priceLabel: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textMuted },
+  price: { fontFamily: Typography.display, fontSize: 22, color: Colors.mocha },
   bottomBtnWrap: { flex: 1 },
 });
 

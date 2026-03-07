@@ -1,14 +1,4 @@
-// ============================================================
-// MAASE — TypeScript Types
-// ============================================================
-
-export type OrderStatus =
-  | 'placed'
-  | 'accepted'
-  | 'preparing'
-  | 'out_for_delivery'
-  | 'delivered'
-  | 'cancelled';
+export type OrderStatus = 'placed' | 'accepted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
 export interface Cook {
   id: string;
@@ -18,7 +8,7 @@ export interface Cook {
   rating: number;
   totalOrders: number;
   cuisine: string;
-  story?: string; // Today's cook story — unique Maase feature
+  story?: string;
 }
 
 export interface Meal {
@@ -34,12 +24,12 @@ export interface Meal {
   etaMinutes: number;
   rating: number;
   reviewCount: number;
-  items: string[];           // What's included
-  batchTotal: number;        // Total portions made today
-  batchRemaining: number;    // Portions still available
-  cookedAt: string;          // e.g. "11:30 AM" — unique Maase feature
-  imageUrl?: string;
+  items: string[];
+  batchTotal: number;
+  batchRemaining: number;
+  cookedAt: string;
   isAvailable: boolean;
+  isTomorrow?: boolean;
 }
 
 export interface CartItem {
@@ -64,37 +54,9 @@ export interface Order {
   total: number;
   placedAt: string;
   deliveryAddress: string;
-  estimatedDelivery: string;
 }
 
-export interface UserProfile {
-  id: string;
-  name: string;
-  phone: string;
-  dietPreferences: DietPreference[]; // Diet Memory — unique Maase feature
-  savedAddresses: Address[];
-  totalOrders: number;
-}
-
-export type DietPreference =
-  | 'Vegetarian'
-  | 'Non-Vegetarian'
-  | 'Jain'
-  | 'No Onion-Garlic'
-  | 'Gluten Free'
-  | 'Vegan';
-
-export interface Address {
-  id: string;
-  label: string; // "Home", "Office"
-  fullAddress: string;
-  lat?: number;
-  lng?: number;
-}
-
-// ============================================================
-// Navigation types
-// ============================================================
+export type DietPreference = 'Vegetarian' | 'Non-Vegetarian' | 'Jain' | 'No Onion-Garlic' | 'Gluten Free' | 'Vegan';
 
 export type RootStackParamList = {
   Splash: undefined;
