@@ -4,30 +4,37 @@ import { createClient } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const supabase = createClient();
 
-  async function sendOtp() {
+  async function sendMagicLink() {
     setLoading(true); setError('');
-    const { error } = await supabase.auth.signInWithOtp({ phone: `+91${phone}` });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+    });
     if (error) setError(error.message);
-    else setStep('otp');
+    else setSent(true);
     setLoading(false);
   }
 
-  async function verifyOtp() {
-    setLoading(true); setError('');
-    const { error } = await supabase.auth.verifyOtp({
-      phone: `+91${phone}`, token: otp, type: 'sms',
-    });
-    if (error) setError(error.message);
-    else router.replace('/dashboard');
-    setLoading(false);
+  if (sent) {
+    return (
+      <div className="min-h-screen bg-ivory flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="text-5xl mb-4">📧</div>
+          <h1 className="font-display text-2xl text-mocha mb-2">Check your email</h1>
+          <p className="text-amber-700 text-sm">We sent a magic link to <strong>{email}</strong>.<br />Click it to sign in to your cook portal.</p>
+          <button onClick={() => setSent(false)} className="mt-6 text-sm text-amber-600 underline">
+            Use a different email
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -40,51 +47,26 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-100">
-          {step === 'phone' ? (
-            <>
-              <label className="block text-sm font-medium text-mocha mb-2">Mobile number</label>
-              <div className="flex items-center border border-amber-200 rounded-xl overflow-hidden mb-4">
-                <span className="px-4 py-3 bg-amber-50 text-mocha font-medium border-r border-amber-200">+91</span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="9876543210"
-                  className="flex-1 px-4 py-3 outline-none text-mocha"
-                />
-              </div>
-              {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-              <button
-                onClick={sendOtp}
-                disabled={phone.length !== 10 || loading}
-                className="w-full py-3 bg-turmeric text-mocha font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-400 transition"
-              >
-                {loading ? 'Sending...' : 'Send OTP'}
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-amber-700 mb-4">Enter the OTP sent to +91 {phone}</p>
-              <input
-                type="text"
-                value={otp}
-                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="6-digit OTP"
-                className="w-full border border-amber-200 rounded-xl px-4 py-3 text-mocha text-center text-xl tracking-widest outline-none mb-4"
-              />
-              {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-              <button
-                onClick={verifyOtp}
-                disabled={otp.length !== 6 || loading}
-                className="w-full py-3 bg-turmeric text-mocha font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-400 transition"
-              >
-                {loading ? 'Verifying...' : 'Verify & Enter'}
-              </button>
-              <button onClick={() => setStep('phone')} className="w-full mt-2 py-2 text-sm text-amber-700">
-                ← Change number
-              </button>
-            </>
-          )}
+          <label className="block text-sm font-medium text-mocha mb-2">Email address</label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && email && sendMagicLink()}
+            placeholder="you@example.com"
+            className="w-full border border-amber-200 rounded-xl px-4 py-3 outline-none text-mocha mb-4"
+          />
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+          <button
+            onClick={sendMagicLink}
+            disabled={!email || loading}
+            className="w-full py-3 bg-turmeric text-mocha font-semibold rounded-xl disabled:opacity-50 hover:bg-amber-400 transition"
+          >
+            {loading ? 'Sending...' : 'Send Magic Link'}
+          </button>
+          <p className="text-center text-xs text-amber-600 mt-4">
+            We'll email you a sign-in link — no password needed.
+          </p>
         </div>
       </div>
     </div>
