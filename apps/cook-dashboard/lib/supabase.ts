@@ -1,11 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr';
 
-// Provide fallback empty strings so build doesn't throw — runtime will redirect to /login if missing
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder'
-  );
+  return createBrowserClient(SUPABASE_URL, SUPABASE_KEY);
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
