@@ -1,38 +1,22 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabase';
-import type { Session, User } from '@supabase/supabase-js';
+import { onAuthStateChanged, signOut as firebaseSignOut, User } from 'firebase/auth';
+import { auth } from '../utils/firebase';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser]     = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const unsub = onAuthStateChanged(auth, u => {
+      setUser(u);
       setLoading(false);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
+    return unsub;
   }, []);
 
-  async function sendOtp(phone: string) {
-    return supabase.auth.signInWithOtp({ phone: `+91${phone}` });
-  }
-
-  async function verifyOtp(phone: string, token: string) {
-    return supabase.auth.verifyOtp({ phone: `+91${phone}`, token, type: 'sms' });
-  }
-
   async function signOut() {
-    return supabase.auth.signOut();
+    return firebaseSignOut(auth);
   }
 
-  return { user, session, loading, sendOtp, verifyOtp, signOut };
+  return { user, loading, signOut };
 }

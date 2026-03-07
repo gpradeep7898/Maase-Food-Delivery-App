@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, Radius, Shadows } from '../constants/theme';
+import { Colors, Typography, Spacing, Radius } from '../constants/theme';
 import { Divider } from '../components/ui';
+import { useAuth } from '../hooks/useAuth';
 
 type DietPref = 'Vegetarian' | 'Non-Vegetarian' | 'Jain' | 'No Onion-Garlic' | 'Gluten Free';
 
@@ -19,7 +20,13 @@ const MENU_ITEMS = [
 ];
 
 const ProfileScreen: React.FC = () => {
+  const { user, signOut } = useAuth();
   const [dietPrefs, setDietPrefs] = useState<DietPref[]>(['Vegetarian']);
+
+  // Derive display name and identifier from Firebase user
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Maase User';
+  const displayId   = user?.phoneNumber || user?.email || '';
+  const initials    = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   const toggleDiet = (pref: DietPref) => {
     setDietPrefs(prev =>
@@ -30,7 +37,7 @@ const ProfileScreen: React.FC = () => {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => {} },
+      { text: 'Sign Out', style: 'destructive', onPress: signOut },
     ]);
   };
 
@@ -40,10 +47,10 @@ const ProfileScreen: React.FC = () => {
         {/* Mocha header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarEmoji}>👤</Text>
+            <Text style={styles.avatarText}>{initials || '👤'}</Text>
           </View>
-          <Text style={styles.userName}>Pradeep Kumar</Text>
-          <Text style={styles.userPhone}>+91 98765 43210</Text>
+          <Text style={styles.userName}>{displayName}</Text>
+          <Text style={styles.userPhone}>{displayId}</Text>
 
           {/* Stats */}
           <View style={styles.statsRow}>
@@ -125,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginBottom: Spacing.md,
   },
-  avatarEmoji: { fontSize: 40 },
+  avatarText: { fontSize: 28, fontFamily: Typography.bodyBold, color: Colors.mocha },
   userName: {
     fontFamily: Typography.display, fontSize: Typography.h3,
     color: Colors.ivory, marginBottom: 4,

@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const OrdersScreen: React.FC = () => {
   const { user } = useAuth();
-  const { orders, loading } = useOrders(user?.id ?? null);
+  const { orders, loading } = useOrders(user?.uid ?? null);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
