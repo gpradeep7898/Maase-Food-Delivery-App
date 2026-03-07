@@ -43,10 +43,14 @@ export default function OrdersPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace('/login'); return; }
-      loadOrders();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadOrders();
+      } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
+        router.replace('/login');
+      }
     });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function loadOrders() {

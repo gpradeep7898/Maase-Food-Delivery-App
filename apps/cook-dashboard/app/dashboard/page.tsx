@@ -32,10 +32,15 @@ export default function DashboardPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace('/login'); return; }
-      loadData();
+    // onAuthStateChange fires immediately with current session AND when magic link hash is processed
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadData();
+      } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
+        router.replace('/login');
+      }
     });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function loadData() {
