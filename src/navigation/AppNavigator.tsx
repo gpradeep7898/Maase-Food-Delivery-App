@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { Text, ActivityIndicator, View } from 'react-native';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../utils/firebase';
+import { Colors } from '../constants/theme';
 
 import {
   RootStackParamList, HomeStackParamList, MainTabParamList, CartItem,
@@ -123,22 +126,48 @@ function MainTabs({
 // Root navigator
 export default function AppNavigator() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [user, setUser] = useState<User | null | undefined>(undefined); // undefined = loading
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, u => setUser(u));
+    return unsub;
+  }, []);
+
+  // Show spinner while Firebase resolves auth state
+  if (user === undefined) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.turmeric, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.mocha} />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        <RootStack.Screen name="Splash" component={SplashScreen} />
-        <RootStack.Screen name="Login" component={LoginScreen} />
-        <RootStack.Screen name="Location" component={LocationScreen} />
-        <RootStack.Screen name="MainTabs">
-          {props => (
-            <MainTabs
-              {...props}
-              cartItems={cartItems}
-              setCartItems={setCartItems}
-            />
-          )}
-        </RootStack.Screen>
+        {user ? (
+          // Authenticated — go straight to main app
+          <>
+            <RootStack.Screen name="MainTabs">
+              {props => (
+                <MainTabs {...props} cartItems={cartItems} setCartItems={setCartItems} />
+              )}
+            </RootStack.Screen>
+            <RootStack.Screen name="Location" component={LocationScreen} />
+          </>
+        ) : (
+          // Not authenticated
+          <>
+            <RootStack.Screen name="Splash" component={SplashScreen} />
+            <RootStack.Screen name="Login" component={LoginScreen} />
+            <RootStack.Screen name="Location" component={LocationScreen} />
+            <RootStack.Screen name="MainTabs">
+              {props => (
+                <MainTabs {...props} cartItems={cartItems} setCartItems={setCartItems} />
+              )}
+            </RootStack.Screen>
+          </>
+        )}
       </RootStack.Navigator>
     </NavigationContainer>
   );
