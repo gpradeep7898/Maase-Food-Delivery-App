@@ -1,0 +1,218 @@
+// Maase Production Prisma Schema
+// Maps to Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id               String    @id @default(uuid())
+  phone            String    @unique
+  name             String?
+  email            String?
+  avatarUrl        String?   @map("avatar_url")
+  dietPreferences  String[]  @map("diet_preferences")
+  defaultAddressId String?   @map("default_address_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  orders    Order[]
+  addresses Address[]
+  reviews   Review[]
+  donations Donation[]
+
+  @@map("profiles")
+}
+
+model Cook {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  name        String
+  bio         String?
+  phone       String   @unique
+  avatarUrl   String?  @map("avatar_url")
+  avatarColor String   @default("#F4A300") @map("avatar_color")
+  initials    String
+  cuisine     String
+  rating      Float    @default(0)
+  totalOrders Int      @default(0) @map("total_orders")
+  isOnline    Boolean  @default(false) @map("is_online")
+  locality    String
+  city        String
+  state       String
+  isVerified  Boolean  @default(false) @map("is_verified")
+  lat         Float?
+  lng         Float?
+  bankAccount String?  @map("bank_account")
+  upiId       String?  @map("upi_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  meals     Meal[]
+  orders    Order[]
+  reviews   Review[]
+  donations Donation[]
+  earnings  Earning[]
+
+  @@map("cooks")
+}
+
+model Meal {
+  id             String   @id @default(uuid())
+  cookId         String   @map("cook_id")
+  name           String
+  description    String
+  emoji          String
+  cuisine        String
+  price          Int
+  batchTotal     Int      @map("batch_total")
+  batchRemaining Int      @map("batch_remaining")
+  batchDate      DateTime @default(now()) @map("batch_date")
+  items          String[]
+  tags           String[]
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0) @map("review_count")
+  cookedAt       String   @map("cooked_at")
+  isAvailable    Boolean  @default(true) @map("is_available")
+  imageUrl       String?  @map("image_url")
+  story          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cook       Cook        @relation(fields: [cookId], references: [id])
+  orderItems OrderItem[]
+  reviews    Review[]
+  donations  Donation[]
+
+  @@map("meals")
+}
+
+model Address {
+  id         String  @id @default(uuid())
+  profileId  String  @map("profile_id")
+  label      String?
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  pincode    String
+  lat        Float?
+  lng        Float?
+  isDefault  Boolean @default(false) @map("is_default")
+
+  profile Profile @relation(fields: [profileId], references: [id])
+  orders  Order[]
+
+  @@map("addresses")
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  displayId      String      @unique @map("display_id")
+  customerId     String      @map("customer_id")
+  cookId         String      @map("cook_id")
+  addressId      String      @map("address_id")
+  status         OrderStatus @default(pending)
+  subtotal       Int
+  deliveryFee    Int         @default(25) @map("delivery_fee")
+  platformFee    Int         @default(10) @map("platform_fee")
+  gst            Int
+  total          Int
+  paymentMethod  String?     @map("payment_method")
+  paymentId      String?     @map("payment_id")
+  rzpOrderId     String?     @unique @map("rzp_order_id")
+  estimatedAt    DateTime?   @map("estimated_at")
+  deliveredAt    DateTime?   @map("delivered_at")
+  cancelReason   String?     @map("cancel_reason")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  customer Profile     @relation(fields: [customerId], references: [id])
+  cook     Cook        @relation(fields: [cookId], references: [id])
+  address  Address     @relation(fields: [addressId], references: [id])
+  items    OrderItem[]
+  review   Review?
+  earning  Earning?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String @map("order_id")
+  mealId    String @map("meal_id")
+  quantity  Int
+  price     Int    // price at time of order
+
+  order Order @relation(fields: [orderId], references: [id])
+  meal  Meal  @relation(fields: [mealId], references: [id])
+
+  @@map("order_items")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  orderId    String   @unique @map("order_id")
+  customerId String   @map("customer_id")
+  cookId     String   @map("cook_id")
+  mealId     String   @map("meal_id")
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  order    Order   @relation(fields: [orderId], references: [id])
+  customer Profile @relation(fields: [customerId], references: [id])
+  cook     Cook    @relation(fields: [cookId], references: [id])
+  meal     Meal    @relation(fields: [mealId], references: [id])
+
+  @@map("reviews")
+}
+
+model Donation {
+  id        String   @id @default(uuid())
+  donorId   String   @map("donor_id")
+  mealId    String   @map("meal_id")
+  cookId    String   @map("cook_id")
+  quantity  Int      @default(1)
+  message   String?
+  paymentId String?  @map("payment_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  donor Profile @relation(fields: [donorId], references: [id])
+  meal  Meal    @relation(fields: [mealId], references: [id])
+  cook  Cook    @relation(fields: [cookId], references: [id])
+
+  @@map("donations")
+}
+
+model Earning {
+  id        String   @id @default(uuid())
+  cookId    String   @map("cook_id")
+  orderId   String   @unique @map("order_id")
+  gross     Int      // order subtotal
+  commission Int     // platform 15%
+  net       Int      // gross - commission
+  settledAt DateTime? @map("settled_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  cook  Cook  @relation(fields: [cookId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("earnings")
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  preparing
+  packed
+  picked_up
+  delivered
+  cancelled
+}

@@ -1,11 +1,15 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../constants/theme';
 import { StatusBadge } from '../components/ui';
-import { MOCK_ORDERS } from '../constants/mockData';
+import { useOrders } from '../hooks/useOrders';
+import { useAuth } from '../hooks/useAuth';
 
 const OrdersScreen: React.FC = () => {
+  const { user } = useAuth();
+  const { orders, loading } = useOrders(user?.id ?? null);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -13,48 +17,56 @@ const OrdersScreen: React.FC = () => {
         <Text style={styles.subtitle}>All your meals, all the love 🍱</Text>
       </View>
 
-      <FlatList
-        data={MOCK_ORDERS}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {/* Top section */}
-            <View style={styles.cardTop}>
-              <Text style={styles.cardEmoji}>{item.meal.emoji}</Text>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardMealName} numberOfLines={1}>{item.meal.name}</Text>
-                <Text style={styles.cardCook}>{item.meal.cook.name}</Text>
-                <StatusBadge status={item.status} />
+      {loading ? (
+        <View style={styles.empty}>
+          <ActivityIndicator size="large" color={Colors.turmeric} />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => {
+            const firstItem = item.items[0];
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardTop}>
+                  <Text style={styles.cardEmoji}>{firstItem?.meal?.emoji ?? '🍱'}</Text>
+                  <View style={styles.cardInfo}>
+                    <Text style={styles.cardMealName} numberOfLines={1}>
+                      {item.items.map(i => i.meal.name).join(', ')}
+                    </Text>
+                    <Text style={styles.cardCook}>{item.cook.name}</Text>
+                    <StatusBadge status={item.status} />
+                  </View>
+                </View>
+                <View style={styles.cardBottom}>
+                  <Text style={styles.cardMeta}>
+                    {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ₹{item.total} · {item.orderId}
+                  </Text>
+                  {item.status === 'delivered' ? (
+                    <TouchableOpacity style={styles.actionBtn}>
+                      <Text style={styles.actionBtnText}>Reorder</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPrimary]}>
+                      <Text style={[styles.actionBtnText, { color: Colors.mocha }]}>Track →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
+            );
+          }}
+          ListEmptyComponent={() => (
+            <View style={styles.empty}>
+              <Text style={styles.emptyEmoji}>📦</Text>
+              <Text style={styles.emptyTitle}>No orders yet</Text>
+              <Text style={styles.emptySubtitle}>Your first meal is just a tap away</Text>
             </View>
-
-            {/* Bottom section */}
-            <View style={styles.cardBottom}>
-              <Text style={styles.cardMeta}>
-                {new Date(item.placedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} · ₹{item.total} · #{item.id}
-              </Text>
-              {item.status === 'delivered' ? (
-                <TouchableOpacity style={styles.actionBtn}>
-                  <Text style={styles.actionBtnText}>Reorder</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPrimary]}>
-                  <Text style={[styles.actionBtnText, { color: Colors.mocha }]}>Track →</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>📦</Text>
-            <Text style={styles.emptyTitle}>No orders yet</Text>
-            <Text style={styles.emptySubtitle}>Your first meal is just a tap away</Text>
-          </View>
-        )}
-        showsVerticalScrollIndicator={false}
-      />
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 };

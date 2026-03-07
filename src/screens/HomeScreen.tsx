@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   FlatList, RefreshControl, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View,
+  Text, TextInput, TouchableOpacity, View, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,8 +11,9 @@ import { FilterChip, SectionHeader } from '../components/ui';
 import MealCard from '../components/MealCard';
 import MaaOnlineBanner from '../components/MaaOnlineBanner';
 import TomorrowSection from '../components/TomorrowSection';
-import { MOCK_MEALS, CUISINE_FILTERS } from '../constants/mockData';
+import { CUISINE_FILTERS } from '../constants/mockData';
 import { addToCart, getItemCount } from '../utils/cart';
+import { useMeals } from '../hooks/useMeals';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'> & {
   cartItems: CartItem[];
@@ -29,32 +30,26 @@ function getGreeting(): string {
 const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) => {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
   const cartCount = getItemCount(cartItems);
 
-  const filteredMeals = MOCK_MEALS.filter(meal => {
-    const matchFilter = filter === 'All' || meal.tags.includes(filter) || meal.cuisine === filter;
-    const matchSearch = !search ||
-      meal.name.toLowerCase().includes(search.toLowerCase()) ||
-      meal.cook.name.toLowerCase().includes(search.toLowerCase()) ||
-      meal.cuisine.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
+  const { meals, loading, refetch } = useMeals({
+    cuisine: filter !== 'All' ? filter : undefined,
+    search: search || undefined,
   });
+
+  const filteredMeals = meals;
 
   const handleAdd = (meal: Meal) => setCartItems(addToCart(cartItems, meal));
   const getCartQty = (mealId: string) => cartItems.find(i => i.meal.id === mealId)?.quantity ?? 0;
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  const onRefresh = async () => { await refetch(); };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <FlatList
         data={filteredMeals}
         keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.turmeric} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={Colors.turmeric} />}
         ListHeaderComponent={() => (
           <>
             {/* Header */}

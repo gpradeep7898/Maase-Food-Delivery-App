@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --turmeric: #F4A300;
+  --mocha: #5C3A21;
+  --ivory: #F8F3E8;
+}
+
+body {
+  background-color: #F8F3E8;
+  color: #1A1207;
+}
