@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maase Mother Survey | Help Us Build India's Home Kitchen Economy</title>
+  <meta name="description" content="Take the Maase Mother Survey — One Extra Meal, One Extra Income. Help us understand how Maase can empower home cooks across India." />
+  <link rel="canonical" href="https://maaseindia.com/mother-survey" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --turmeric:#F4A300; --turmeric-deep:#D98D00; --turmeric-light:rgba(244,163,0,0.10);
+      --ivory:#F8F3E8; --ivory-2:#FFFCF5;
+      --mocha:#5C3A21; --mocha-soft:#7b573e;
+      --white:#ffffff; --line:rgba(92,58,33,0.10);
+      --green:#22c55e;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Poppins',sans-serif;background:var(--ivory-2);color:var(--mocha);-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+
+    /* NAV */
+    .legal-nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(14px);background:rgba(248,243,232,0.94);border-bottom:1px solid var(--line)}
+    .legal-nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .legal-brand{display:flex;align-items:center;gap:10px}
+    .legal-logo{width:44px;height:44px;border-radius:12px;overflow:hidden;border:1.5px solid rgba(244,163,0,0.25);flex-shrink:0}
+    .legal-logo img{width:100%;height:100%;object-fit:cover;display:block}
+    .legal-brand-name{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--mocha)}
+    .back-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:999px;background:rgba(244,163,0,0.12);border:1px solid rgba(244,163,0,0.22);font-size:0.82rem;font-weight:700;color:var(--turmeric-deep);transition:background 0.2s;white-space:nowrap}
+    .back-btn:hover{background:rgba(244,163,0,0.20)}
+
+    /* HERO */
+    .survey-hero{background:var(--mocha);padding:56px 24px 48px;text-align:center;position:relative;overflow:hidden}
+    .survey-hero::before{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(244,163,0,0.14),transparent 70%)}
+    .survey-hero-inner{max-width:700px;margin:0 auto;position:relative;z-index:1}
+    .survey-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(244,163,0,0.15);border:1px solid rgba(244,163,0,0.25);border-radius:999px;padding:6px 14px;font-size:0.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--turmeric);margin-bottom:18px}
+    .survey-hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,5vw,3rem);color:var(--ivory);margin-bottom:12px;line-height:1.15}
+    .survey-hero h1 span{color:var(--turmeric);font-style:italic}
+    .survey-hero-sub{font-size:0.94rem;color:rgba(248,243,232,0.60);line-height:1.7;margin-bottom:0}
+
+    /* PROGRESS BAR */
+    .survey-progress-wrap{background:var(--ivory);border-bottom:1px solid var(--line);padding:16px 24px;position:sticky;top:68px;z-index:90}
+    .survey-progress-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    .progress-bar{flex:1;height:6px;background:rgba(92,58,33,0.10);border-radius:3px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--turmeric),var(--turmeric-deep));border-radius:3px;transition:width 0.4s ease}
+    .progress-label{font-size:0.78rem;font-weight:700;color:var(--mocha-soft);white-space:nowrap}
+
+    /* SURVEY FORM */
+    .survey-wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px}
+
+    /* Question card */
+    .q-card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:28px 28px 24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(92,58,33,0.06);display:none}
+    .q-card.active{display:block;animation:fadeUp 0.35s ease forwards}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .q-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--turmeric-light);border-radius:7px;font-size:0.72rem;font-weight:800;color:var(--turmeric-deep);margin-bottom:10px}
+    .q-text{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--mocha);margin-bottom:18px;line-height:1.4}
+    .q-options{display:flex;flex-direction:column;gap:10px}
+    .q-option{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--ivory-2);cursor:pointer;transition:all 0.18s;-webkit-tap-highlight-color:transparent}
+    .q-option:hover{border-color:rgba(244,163,0,0.35);background:var(--turmeric-light)}
+    .q-option.selected{border-color:var(--turmeric);background:var(--turmeric-light)}
+    .q-option input[type=radio]{display:none}
+    .q-radio{width:18px;height:18px;border-radius:50%;border:2px solid rgba(92,58,33,0.20);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.18s}
+    .q-option.selected .q-radio{border-color:var(--turmeric);background:var(--turmeric)}
+    .q-option.selected .q-radio::after{content:'';width:6px;height:6px;border-radius:50%;background:white}
+    .q-option-label{font-size:0.9rem;font-weight:500;color:var(--mocha)}
+
+    /* Multi-select chips (Q5, Q8) */
+    .q-chips{display:flex;flex-wrap:wrap;gap:9px}
+    .q-chip{padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--ivory-2);font-size:0.84rem;font-weight:600;color:var(--mocha-soft);cursor:pointer;transition:all 0.18s;-webkit-tap-highlight-color:transparent}
+    .q-chip:hover{border-color:rgba(244,163,0,0.35);color:var(--mocha)}
+    .q-chip.selected{background:var(--turmeric);border-color:var(--turmeric);color:var(--mocha)}
+
+    /* Phone input (Q11) */
+    .q-phone-wrap{margin-top:14px;display:none}
+    .q-phone-wrap.show{display:block}
+    .q-phone-input{width:100%;height:50px;background:var(--ivory);border:1.5px solid var(--line);border-radius:12px;padding:0 16px;font-family:'Poppins',sans-serif;font-size:16px;color:var(--mocha);outline:none;transition:border-color 0.2s}
+    .q-phone-input:focus{border-color:var(--turmeric)}
+    .q-phone-label{font-size:0.8rem;font-weight:700;color:var(--mocha-soft);margin-bottom:8px;display:block}
+
+    /* Navigation buttons */
+    .q-nav{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+    .q-back{display:inline-flex;align-items:center;gap:6px;padding:11px 20px;border-radius:999px;background:transparent;border:1.5px solid var(--line);font-family:'Poppins',sans-serif;font-size:0.86rem;font-weight:600;color:var(--mocha-soft);cursor:pointer;transition:all 0.2s}
+    .q-back:hover{border-color:var(--mocha-soft);color:var(--mocha)}
+    .q-next{display:inline-flex;align-items:center;gap:7px;padding:13px 28px;border-radius:999px;background:linear-gradient(180deg,var(--turmeric),var(--turmeric-deep));border:none;font-family:'Poppins',sans-serif;font-size:0.9rem;font-weight:700;color:var(--mocha);cursor:pointer;transition:all 0.2s;box-shadow:0 8px 20px rgba(244,163,0,0.25)}
+    .q-next:hover{box-shadow:0 12px 28px rgba(244,163,0,0.35);transform:translateY(-1px)}
+    .q-next:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* Success screen */
+    .survey-success{display:none;text-align:center;padding:48px 24px 72px;max-width:560px;margin:0 auto}
+    .survey-success.show{display:block;animation:fadeUp 0.5s ease forwards}
+    .success-icon{font-size:4rem;margin-bottom:20px}
+    .survey-success h2{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:14px}
+    .survey-success p{font-size:0.95rem;color:var(--mocha-soft);line-height:1.75;margin-bottom:24px}
+    .survey-success .apply-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:linear-gradient(180deg,var(--turmeric),var(--turmeric-deep));border-radius:999px;font-size:0.92rem;font-weight:700;color:var(--mocha);box-shadow:0 8px 20px rgba(244,163,0,0.25);transition:all 0.2s}
+    .survey-success .apply-btn:hover{box-shadow:0 14px 28px rgba(244,163,0,0.35);transform:translateY(-2px)}
+
+    /* Error */
+    .q-error{display:none;background:#FEE2E2;border-radius:10px;padding:10px 14px;font-size:0.82rem;color:#DC2626;font-weight:600;margin-top:12px}
+    .q-error.show{display:block}
+
+    @media(max-width:560px){
+      .survey-wrap{padding:32px 16px 64px}
+      .q-card{padding:22px 18px 20px}
+      .survey-hero{padding:40px 16px 36px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="legal-nav">
+  <div class="legal-nav-inner">
+    <a href="index.html" class="legal-brand">
+      <div class="legal-logo"><img src="logo.jpg" alt="Maase" /></div>
+      <span class="legal-brand-name">Maase</span>
+    </a>
+    <a href="index.html" class="back-btn">← Back to Home</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="survey-hero">
+  <div class="survey-hero-inner">
+    <div class="survey-hero-badge">❤️ Mother Survey</div>
+    <h1>One Extra Meal,<br /><span>One Extra Income</span></h1>
+    <p class="survey-hero-sub">Help us understand how Maase can empower home cooks across India.<br />Takes 2 minutes. Your answers shape the platform.</p>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="survey-progress-wrap" id="progressWrap">
+  <div class="survey-progress-inner">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:9%"></div></div>
+    <span class="progress-label" id="progressLabel">1 of 11</span>
+  </div>
+</div>
+
+<!-- SURVEY -->
+<div class="survey-wrap" id="surveyWrap">
+
+  <!-- Q1 -->
+  <div class="q-card active" id="q1">
+    <div class="q-num">1</div>
+    <div class="q-text">Are you a homemaker?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q1" value="Yes" /><div class="q-radio"></div><span class="q-option-label">Yes</span></label>
+      <label class="q-option"><input type="radio" name="q1" value="No" /><div class="q-radio"></div><span class="q-option-label">No</span></label>
+    </div>
+    <div class="q-nav"><div></div><button class="q-next" onclick="nextQ(1)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card" id="q2">
+    <div class="q-num">2</div>
+    <div class="q-text">Do you cook daily for your family?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q2" value="Yes, every day" /><div class="q-radio"></div><span class="q-option-label">Yes, every day</span></label>
+      <label class="q-option"><input type="radio" name="q2" value="Some days" /><div class="q-radio"></div><span class="q-option-label">Some days</span></label>
+      <label class="q-option"><input type="radio" name="q2" value="Rarely" /><div class="q-radio"></div><span class="q-option-label">Rarely</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(2)">← Back</button><button class="q-next" onclick="nextQ(2)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card" id="q3">
+    <div class="q-num">3</div>
+    <div class="q-text">Would you be interested in earning extra income by cooking one extra meal along with your family cooking?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q3" value="Yes" /><div class="q-radio"></div><span class="q-option-label">Yes, definitely!</span></label>
+      <label class="q-option"><input type="radio" name="q3" value="Maybe" /><div class="q-radio"></div><span class="q-option-label">Maybe, I'd like to know more</span></label>
+      <label class="q-option"><input type="radio" name="q3" value="No" /><div class="q-radio"></div><span class="q-option-label">No, not interested</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(3)">← Back</button><button class="q-next" onclick="nextQ(3)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card" id="q4">
+    <div class="q-num">4</div>
+    <div class="q-text">How many extra meals can you cook in a day?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q4" value="1 meal" /><div class="q-radio"></div><span class="q-option-label">1 meal</span></label>
+      <label class="q-option"><input type="radio" name="q4" value="2 meals" /><div class="q-radio"></div><span class="q-option-label">2 meals</span></label>
+      <label class="q-option"><input type="radio" name="q4" value="3 meals" /><div class="q-radio"></div><span class="q-option-label">3 meals</span></label>
+      <label class="q-option"><input type="radio" name="q4" value="Not sure" /><div class="q-radio"></div><span class="q-option-label">Not sure yet</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(4)">← Back</button><button class="q-next" onclick="nextQ(4)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q5 — Multi select -->
+  <div class="q-card" id="q5">
+    <div class="q-num">5</div>
+    <div class="q-text">What type of food do you cook best? <span style="font-size:0.82rem;color:var(--mocha-soft);font-family:'Poppins',sans-serif">(Select all that apply)</span></div>
+    <div class="q-chips" id="chips5">
+      <span class="q-chip" onclick="toggleChip(this,'q5')">🥦 Veg meals</span>
+      <span class="q-chip" onclick="toggleChip(this,'q5')">🍗 Non-veg meals</span>
+      <span class="q-chip" onclick="toggleChip(this,'q5')">🌶️ Andhra meals</span>
+      <span class="q-chip" onclick="toggleChip(this,'q5')">🫓 North Indian meals</span>
+      <span class="q-chip" onclick="toggleChip(this,'q5')">🥞 Snacks / Tiffins</span>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(5)">← Back</button><button class="q-next" id="nextQ5" onclick="nextQ(5)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="q-card" id="q6">
+    <div class="q-num">6</div>
+    <div class="q-text">What time can your food be ready?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q6" value="Lunch (12-1 PM)" /><div class="q-radio"></div><span class="q-option-label">🌅 Lunch (12–1 PM)</span></label>
+      <label class="q-option"><input type="radio" name="q6" value="Dinner (7-8 PM)" /><div class="q-radio"></div><span class="q-option-label">🌙 Dinner (7–8 PM)</span></label>
+      <label class="q-option"><input type="radio" name="q6" value="Both" /><div class="q-radio"></div><span class="q-option-label">Both lunch and dinner</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(6)">← Back</button><button class="q-next" onclick="nextQ(6)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="q-card" id="q7">
+    <div class="q-num">7</div>
+    <div class="q-text">If customers nearby can order your home-cooked food and you can set the price for your meal, would you like to participate?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q7" value="Yes" /><div class="q-radio"></div><span class="q-option-label">Yes! I'd love to participate</span></label>
+      <label class="q-option"><input type="radio" name="q7" value="Maybe" /><div class="q-radio"></div><span class="q-option-label">Maybe — need more details</span></label>
+      <label class="q-option"><input type="radio" name="q7" value="No" /><div class="q-radio"></div><span class="q-option-label">No, not for me</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(7)">← Back</button><button class="q-next" onclick="nextQ(7)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q8 — Multi select -->
+  <div class="q-card" id="q8">
+    <div class="q-num">8</div>
+    <div class="q-text">What would you use this income for? <span style="font-size:0.82rem;color:var(--mocha-soft);font-family:'Poppins',sans-serif">(Select all that apply)</span></div>
+    <div class="q-chips" id="chips8">
+      <span class="q-chip" onclick="toggleChip(this,'q8')">🏠 Household expenses</span>
+      <span class="q-chip" onclick="toggleChip(this,'q8')">📚 Children's education</span>
+      <span class="q-chip" onclick="toggleChip(this,'q8')">🏦 EMI / Rent</span>
+      <span class="q-chip" onclick="toggleChip(this,'q8')">💰 Savings</span>
+      <span class="q-chip" onclick="toggleChip(this,'q8')">✨ Personal spending</span>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(8)">← Back</button><button class="q-next" id="nextQ8" onclick="nextQ(8)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="q-card" id="q9">
+    <div class="q-num">9</div>
+    <div class="q-text">Would you be comfortable if a delivery partner picks the food from your home and delivers it to customers?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q9" value="Yes" /><div class="q-radio"></div><span class="q-option-label">Yes, completely comfortable</span></label>
+      <label class="q-option"><input type="radio" name="q9" value="Maybe" /><div class="q-radio"></div><span class="q-option-label">Maybe — I have some questions</span></label>
+      <label class="q-option"><input type="radio" name="q9" value="No" /><div class="q-radio"></div><span class="q-option-label">No, not comfortable</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(9)">← Back</button><button class="q-next" onclick="nextQ(9)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="q-card" id="q10">
+    <div class="q-num">10</div>
+    <div class="q-text">How much would you like to earn per day from cooking one extra meal?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q10" value="₹100–₹200" /><div class="q-radio"></div><span class="q-option-label">₹100 – ₹200 per day</span></label>
+      <label class="q-option"><input type="radio" name="q10" value="₹200–₹400" /><div class="q-radio"></div><span class="q-option-label">₹200 – ₹400 per day</span></label>
+      <label class="q-option"><input type="radio" name="q10" value="₹400+" /><div class="q-radio"></div><span class="q-option-label">₹400+ per day</span></label>
+    </div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(10)">← Back</button><button class="q-next" onclick="nextQ(10)" disabled>Next →</button></div>
+  </div>
+
+  <!-- Q11 -->
+  <div class="q-card" id="q11">
+    <div class="q-num">11</div>
+    <div class="q-text">Would you like to join Maase when it launches in Bangalore?</div>
+    <div class="q-options">
+      <label class="q-option"><input type="radio" name="q11" value="Yes" /><div class="q-radio"></div><span class="q-option-label">Yes! I want to join</span></label>
+      <label class="q-option"><input type="radio" name="q11" value="Maybe later" /><div class="q-radio"></div><span class="q-option-label">Maybe later</span></label>
+      <label class="q-option"><input type="radio" name="q11" value="No" /><div class="q-radio"></div><span class="q-option-label">No, not now</span></label>
+    </div>
+    <div class="q-phone-wrap" id="phoneWrap">
+      <label class="q-phone-label">Your phone number (so we can reach you first 🎉)</label>
+      <input class="q-phone-input" id="phoneInput" type="tel" placeholder="10-digit number" maxlength="10" />
+    </div>
+    <div class="q-error" id="submitError">Something went wrong. Please try again.</div>
+    <div class="q-nav"><button class="q-back" onclick="prevQ(11)">← Back</button><button class="q-next" id="submitBtn" onclick="submitSurvey()" disabled>Submit Survey 🍱</button></div>
+  </div>
+
+</div>
+
+<!-- SUCCESS -->
+<div class="survey-wrap" id="successWrap" style="display:none">
+  <div class="survey-success show">
+    <div class="success-icon">🎉</div>
+    <h2>Thank you so much!</h2>
+    <p>Your responses help us build a platform that truly works for home cooks like you. Maase is launching first in Bangalore — we'll reach out when we're live in your area!</p>
+    <p style="font-size:0.88rem;color:var(--mocha-soft);margin-bottom:28px">Questions? Email us at <a href="mailto:support@maaseindia.com" style="color:var(--turmeric-deep);font-weight:600">support@maaseindia.com</a></p>
+    <a href="index.html" class="apply-btn">← Back to Maase Home</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  var sb = supabase.createClient(
+    'https://aaixsytygsjilgvebnfv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhaXhzeXR5Z3NqaWxndmVibmZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0OTg0ODQsImV4cCI6MjA4ODA3NDQ4NH0.eN96IMG4nzxTlh1QjVCMD_ZP8VRAbD8ea3AFeQPnb7A'
+  );
+
+  var answers = {};
+  var currentQ = 1;
+  var totalQ = 11;
+
+  /* ── Attach radio listeners ── */
+  document.querySelectorAll('.q-option input[type=radio]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var card = this.closest('.q-card');
+      var qNum = parseInt(card.id.replace('q',''));
+      // Deselect siblings
+      card.querySelectorAll('.q-option').forEach(function(o){ o.classList.remove('selected'); });
+      this.closest('.q-option').classList.add('selected');
+      answers['q' + qNum] = this.value;
+      // Enable next button
+      var nextBtn = card.querySelector('.q-next');
+      if (nextBtn) nextBtn.disabled = false;
+      // Q11: show phone if yes
+      if (qNum === 11 && this.value === 'Yes') {
+        document.getElementById('phoneWrap').classList.add('show');
+      } else if (qNum === 11) {
+        document.getElementById('phoneWrap').classList.remove('show');
+      }
+    });
+  });
+
+  /* ── Multi-select chip toggle ── */
+  window.toggleChip = function(el, qKey) {
+    el.classList.toggle('selected');
+    var selected = [];
+    document.querySelectorAll('#chips' + qKey.replace('q','') + ' .q-chip.selected').forEach(function(c){
+      selected.push(c.textContent.trim().replace(/^[\u{1F000}-\u{1FFFF}]\s*/u,'').trim());
+    });
+    answers[qKey] = selected.join(', ');
+    var nextKey = qKey === 'q5' ? 'nextQ5' : 'nextQ8';
+    document.getElementById(nextKey).disabled = selected.length === 0;
+  };
+
+  /* ── Navigation ── */
+  window.nextQ = function(n) {
+    if (n < totalQ) {
+      showQ(n, n + 1);
+    }
+  };
+  window.prevQ = function(n) {
+    if (n > 1) showQ(n, n - 1);
+  };
+
+  function showQ(from, to) {
+    document.getElementById('q' + from).classList.remove('active');
+    document.getElementById('q' + to).classList.add('active');
+    currentQ = to;
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateProgress() {
+    var pct = Math.round((currentQ / totalQ) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = currentQ + ' of ' + totalQ;
+  }
+
+  /* ── Submit ── */
+  window.submitSurvey = async function() {
+    var btn = document.getElementById('submitBtn');
+    var errEl = document.getElementById('submitError');
+    btn.textContent = 'Submitting…';
+    btn.disabled = true;
+    errEl.classList.remove('show');
+
+    var phone = document.getElementById('phoneInput').value.trim();
+    var payload = {
+      is_homemaker: answers['q1'] || null,
+      cooks_daily: answers['q2'] || null,
+      interested_earning: answers['q3'] || null,
+      extra_meals_per_day: answers['q4'] || null,
+      food_types: answers['q5'] || null,
+      ready_time: answers['q6'] || null,
+      would_participate: answers['q7'] || null,
+      income_usage: answers['q8'] || null,
+      delivery_comfort: answers['q9'] || null,
+      earning_expectation: answers['q10'] || null,
+      wants_to_join: answers['q11'] || null,
+      phone: phone || null,
+      submitted_at: new Date().toISOString()
+    };
+
+    try {
+      var { error } = await sb.from('mother_surveys').insert([payload]);
+      if (error) throw error;
+      document.getElementById('surveyWrap').style.display = 'none';
+      document.getElementById('progressWrap').style.display = 'none';
+      document.getElementById('successWrap').style.display = 'block';
+    } catch(e) {
+      console.error(e);
+      errEl.classList.add('show');
+      btn.textContent = 'Submit Survey 🍱';
+      btn.disabled = false;
+    }
+  };
+</script>
+<script src="footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "524815534595",
+    "project_id": "maase-41d82",
+    "storage_bucket": "maase-41d82.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:524815534595:android:aa874cc68cafcf42b8dc36",
+        "android_client_info": {
+          "package_name": "maaseindia.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "524815534595-2tji0j52nt67bjkk9aap8ugorrst9sno.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZdk62mPlw3oUZvsyg_Ap-A82UTbHeMGY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "524815534595-2tji0j52nt67bjkk9aap8ugorrst9sno.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "524815534595-mckipl1bosl07skubas38umui1v2drsu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "maaseindia.com"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

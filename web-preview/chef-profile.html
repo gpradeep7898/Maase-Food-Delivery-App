@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="pageTitle">Chef Profile — Maase</title>
+  <meta name="description" id="pageDesc" content="Order authentic home-cooked food from this Maase home chef." />
+
+  <!-- OG tags filled by JS -->
+  <meta property="og:type" content="profile" />
+  <meta property="og:site_name" content="Maase India" />
+  <meta property="og:title" id="ogTitle" content="Chef Profile — Maase" />
+  <meta property="og:description" id="ogDesc" content="Order authentic home-cooked food." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --turmeric: #F4A300; --turmeric-deep: #D98D00;
+      --ivory: #F8F3E8; --ivory-2: #FFF9EF;
+      --mocha: #5C3A21; --mocha-soft: #7b573e;
+      --white: #ffffff; --line: rgba(92,58,33,0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(circle at top right, rgba(244,163,0,0.12), transparent 30%),
+                  linear-gradient(180deg, #fffdf8 0%, var(--ivory) 100%);
+      color: var(--mocha); min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    a { color: inherit; text-decoration: none; }
+
+    .page { max-width: 520px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    /* ── BACK NAV ── */
+    .back-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .back-btn { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 600; color: var(--mocha-soft); background: rgba(255,255,255,0.8); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+    .back-btn:hover { background: white; }
+    .maase-brand { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .maase-logo { width: 32px; height: 32px; border-radius: 9px; overflow: hidden; }
+    .maase-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .maase-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+
+    /* ── PROFILE CARD ── */
+    .profile-card {
+      background: white; border-radius: 28px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(92,58,33,0.14); border: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+    .profile-banner {
+      background: linear-gradient(135deg, var(--turmeric) 0%, var(--turmeric-deep) 100%);
+      height: 140px; position: relative; display: flex; align-items: flex-end; padding: 0 28px 0;
+    }
+    .profile-avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--ivory); border: 4px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; position: relative; bottom: -44px;
+      box-shadow: 0 8px 24px rgba(92,58,33,0.18); flex-shrink: 0;
+    }
+    .profile-verified { position: absolute; bottom: 0; right: 0; background: var(--turmeric); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 2px solid white; }
+    .profile-banner-text { margin-left: 16px; padding-bottom: 14px; }
+    .profile-banner-tag { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 0.5px; text-transform: uppercase; }
+    .profile-banner-name { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: white; line-height: 1.1; }
+
+    .profile-body { padding: 60px 28px 28px; }
+    .profile-location { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--mocha-soft); margin-bottom: 6px; }
+    .profile-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 20px; }
+    .stars { color: var(--turmeric); font-size: 1rem; letter-spacing: 2px; }
+    .rating-num { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--mocha); }
+    .rating-label { font-size: 0.78rem; color: var(--mocha-soft); }
+
+    .section-title { font-size: 0.72rem; font-weight: 700; color: var(--mocha-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .cuisine-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+    .chip { padding: 6px 13px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: rgba(244,163,0,0.12); border: 1px solid rgba(244,163,0,0.22); color: #9d6100; }
+    .dishes-box { background: var(--ivory); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; }
+    .dishes-text { font-size: 0.9rem; line-height: 1.7; color: var(--mocha); }
+
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .stat-box { background: var(--ivory); border-radius: 14px; padding: 14px 10px; text-align: center; }
+    .stat-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--mocha); }
+    .stat-lbl { font-size: 0.68rem; color: var(--mocha-soft); margin-top: 2px; }
+
+    .coming-soon-badge {
+      background: linear-gradient(135deg, var(--mocha) 0%, #3d2414 100%);
+      border-radius: 16px; padding: 18px 20px; text-align: center; margin-bottom: 20px;
+    }
+    .coming-soon-badge .cs-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .coming-soon-badge .cs-text { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--turmeric); margin-bottom: 4px; }
+    .coming-soon-badge .cs-sub { font-size: 0.8rem; color: rgba(248,243,232,0.55); }
+
+    /* ── SHARE SECTION ── */
+    .share-card { background: linear-gradient(135deg, #fff8e8, rgba(244,163,0,0.08)); border: 1px solid rgba(244,163,0,0.2); border-radius: 24px; padding: 24px; margin-bottom: 20px; }
+    .share-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
+    .share-card p { font-size: 0.85rem; color: var(--mocha-soft); line-height: 1.6; margin-bottom: 18px; }
+    .share-btns { display: flex; flex-direction: column; gap: 10px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 22px; border-radius: 999px; border: 1px solid transparent; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; font-size: 0.92rem; transition: transform .2s, box-shadow .2s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: linear-gradient(180deg, var(--turmeric) 0%, var(--turmeric-deep) 100%); color: white; box-shadow: 0 12px 24px rgba(244,163,0,0.28); width: 100%; }
+    .btn-secondary { background: white; border-color: var(--line); color: var(--mocha); width: 100%; }
+
+    /* ── REF CODE BOX ── */
+    .ref-banner { background: var(--mocha); border-radius: 18px; padding: 18px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .ref-banner-left .ref-lbl { font-size: 0.72rem; color: rgba(248,243,232,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .ref-banner-left .ref-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--turmeric); letter-spacing: 2px; }
+    .ref-banner-right { font-size: 0.75rem; color: rgba(248,243,232,0.65); text-align: right; line-height: 1.5; }
+
+    /* ── APPLY CTA ── */
+    .apply-cta { background: white; border-radius: 24px; border: 1px solid var(--line); padding: 24px; text-align: center; box-shadow: 0 12px 30px rgba(92,58,33,0.08); }
+    .apply-cta p { font-size: 0.88rem; color: var(--mocha-soft); margin-bottom: 14px; line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    .page-footer { text-align: center; margin-top: 28px; font-size: 0.8rem; color: var(--mocha-soft); }
+    .page-footer a { color: var(--turmeric); font-weight: 600; }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+    .profile-card { animation: fadeUp 0.6s ease forwards; }
+    .share-card { animation: fadeUp 0.6s 0.15s ease both; }
+    .ref-banner { animation: fadeUp 0.6s 0.25s ease both; }
+    .apply-cta { animation: fadeUp 0.6s 0.35s ease both; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Back nav -->
+  <div class="back-nav">
+    <a href="index.html" class="back-btn">← Back to Maase</a>
+    <div class="maase-brand">
+      <div class="maase-logo"><img src="logo.jpg" alt="Maase" /></div>
+      <div class="maase-name">Maase</div>
+    </div>
+  </div>
+
+  <!-- Profile card -->
+  <div class="profile-card">
+    <div class="profile-banner">
+      <div class="profile-avatar" id="profileAvatar">
+        👩‍🍳
+        <div class="profile-verified">✓</div>
+      </div>
+      <div class="profile-banner-text">
+        <div class="profile-banner-tag">Maase Home Chef</div>
+        <div class="profile-banner-name" id="profileName">Chef Name</div>
+      </div>
+    </div>
+    <div class="profile-body">
+      <div class="profile-location" id="profileLocation">📍 Area, City</div>
+      <div class="profile-rating">
+        <div class="stars" id="profileStars">⭐⭐⭐⭐⭐</div>
+        <div class="rating-num" id="profileRatingNum">5.0</div>
+        <div class="rating-label">self-rated</div>
+      </div>
+
+      <div class="section-title">Cuisines</div>
+      <div class="cuisine-chips" id="profileCuisines"></div>
+
+      <div class="section-title">Signature Dishes</div>
+      <div class="dishes-box">
+        <div class="dishes-text" id="profileDishes">—</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val" id="statCity">—</div>
+          <div class="stat-lbl">City</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statRating">—⭐</div>
+          <div class="stat-lbl">Self-Rating</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">Soon</div>
+          <div class="stat-lbl">Goes Live</div>
+        </div>
+      </div>
+
+      <div class="coming-soon-badge">
+        <div class="cs-icon">🍱</div>
+        <div class="cs-text">Orders opening soon</div>
+        <div class="cs-sub">We're getting ready to launch in your area</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share card -->
+  <div class="share-card">
+    <h3>Share my chef profile 📣</h3>
+    <p>Help spread the word! Share this page and earn ₹50 credit for every chef who applies using your referral link.</p>
+    <div class="share-btns">
+      <a class="btn btn-primary" id="waShareBtn" href="#" target="_blank">Share on WhatsApp 💬</a>
+      <button class="btn btn-secondary" id="copyLinkBtn" onclick="copyProfileLink()">Copy Profile Link 🔗</button>
+    </div>
+  </div>
+
+  <!-- Referral code -->
+  <div class="ref-banner" id="refBanner" style="display:none">
+    <div class="ref-banner-left">
+      <div class="ref-lbl">Your Referral Code</div>
+      <div class="ref-val" id="refCodeDisplay">—</div>
+    </div>
+    <div class="ref-banner-right">Share this code<br>Earn ₹50 per chef<br>you bring in 🎁</div>
+  </div>
+
+  <!-- Apply CTA for visitors -->
+  <div class="apply-cta">
+    <p>Are you also a home cook? Join Maase and start earning from your kitchen!</p>
+    <a class="btn btn-primary" href="index.html#nominate">Apply as a Home Chef →</a>
+  </div>
+
+  <div class="page-footer">
+    <a href="index.html">maaseindia.com</a> · connect.maase@gmail.com
+  </div>
+
+</div>
+
+<script>
+/* Read URL params */
+var params = new URLSearchParams(window.location.search);
+var name = params.get('name') || 'Home Chef';
+var area = params.get('area') || '';
+var city = params.get('city') || '';
+var cuisinesRaw = params.get('cuisines') || '';
+var dishes = params.get('dishes') || 'Signature home-cooked dishes';
+var rating = parseInt(params.get('rating') || '5', 10);
+var code = params.get('code') || '';
+
+/* Page title + OG */
+document.getElementById('pageTitle').textContent = name + ' — Maase Home Chef';
+document.getElementById('pageDesc').setAttribute('content', name + ' cooks authentic home food in ' + (area || city) + '. Order on Maase soon!');
+document.getElementById('ogTitle').setAttribute('content', name + ' — Maase Home Chef from ' + city);
+document.getElementById('ogDesc').setAttribute('content', 'Signature dishes: ' + dishes);
+
+/* Profile card */
+document.getElementById('profileName').textContent = name;
+document.getElementById('profileLocation').textContent = '📍 ' + [area, city].filter(Boolean).join(', ');
+document.getElementById('profileRatingNum').textContent = rating + '.0';
+document.getElementById('statCity').textContent = city || '—';
+document.getElementById('statRating').textContent = rating + '⭐';
+
+/* Stars */
+var starsStr = '';
+for (var i = 0; i < 5; i++) starsStr += i < rating ? '⭐' : '☆';
+document.getElementById('profileStars').textContent = starsStr;
+
+/* Avatar initials feel */
+var firstChar = name.trim()[0] || '👩';
+document.getElementById('profileAvatar').innerHTML = '<div style="font-size:2.8rem;line-height:1">' + firstChar.toUpperCase() + '</div><div class="profile-verified">✓</div>';
+
+/* Cuisines */
+var cuisineContainer = document.getElementById('profileCuisines');
+if (cuisinesRaw) {
+  cuisinesRaw.split(',').forEach(function(c) {
+    c = c.trim();
+    if (!c) return;
+    var chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = c;
+    cuisineContainer.appendChild(chip);
+  });
+}
+
+/* Dishes */
+document.getElementById('profileDishes').textContent = dishes || '—';
+
+/* Referral code */
+if (code) {
+  document.getElementById('refBanner').style.display = 'flex';
+  document.getElementById('refCodeDisplay').textContent = code;
+}
+
+/* Share buttons */
+var profileUrl = window.location.href;
+var waText = encodeURIComponent(
+  'I just applied as a home chef on Maase 🍱\n' +
+  'My name is ' + name + ' and I cook from ' + (area || city) + '!\n\n' +
+  'You can apply too and start earning: ' + (code ? 'https://maaseindia.com?ref=' + code : 'https://maaseindia.com')
+);
+document.getElementById('waShareBtn').href = 'https://wa.me/?text=' + waText;
+
+function copyProfileLink() {
+  navigator.clipboard.writeText(profileUrl).catch(function(){});
+  var btn = document.getElementById('copyLinkBtn');
+  btn.textContent = '✓ Copied!';
+  setTimeout(function() { btn.textContent = 'Copy Profile Link 🔗'; }, 2000);
+}
+</script>
+</body>
+</html>

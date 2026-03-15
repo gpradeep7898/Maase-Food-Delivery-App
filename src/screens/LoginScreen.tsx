@@ -12,7 +12,7 @@ import { Colors, Typography, Spacing, Radius, Shadows } from '../lib/theme';
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }: { navigation: any }) {
-  const { sendOTP, verifyOTP, profile } = useAuth();
+  const { sendOTP, verifyOTP } = useAuth();
   const [stage, setStage] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
