@@ -1,64 +1,45 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
-import { Colors, Typography } from '../constants/theme';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, StatusBar } from 'react-native';
+import { Colors, Typography } from '../lib/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
+const { width } = Dimensions.get('window');
 
-const SplashScreen: React.FC<Props> = ({ navigation }) => {
+export default function SplashScreen({ navigation }: { navigation: any }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('Login');
-    }, 2200);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]).start();
+    const timer = setTimeout(() => navigation.replace('Login'), 2200);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoBox}>
-        <Text style={styles.logoEmoji}>🍱</Text>
-      </View>
-      <Text style={styles.title}>Maase</Text>
-      <Text style={styles.tagline}>One extra meal from ma</Text>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.ivory} />
+      <View style={styles.blob} />
+      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <Text style={styles.logo}>maase</Text>
+        <Text style={styles.tagline}>One extra meal from ma</Text>
+      </Animated.View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: Colors.ivory, justifyContent: 'center', alignItems: 'center' },
+  blob: {
+    position: 'absolute',
+    width: width * 0.8,
+    height: width * 0.8,
+    borderRadius: width * 0.4,
     backgroundColor: Colors.turmeric,
-    alignItems: 'center',
-    justifyContent: 'center',
+    opacity: 0.1,
   },
-  logoBox: {
-    width: 100,
-    height: 100,
-    backgroundColor: Colors.mocha,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: Colors.mocha,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  logoEmoji: { fontSize: 52 },
-  title: {
-    fontFamily: Typography.display,
-    fontSize: 48,
-    color: Colors.mocha,
-    marginBottom: 8,
-  },
-  tagline: {
-    fontFamily: Typography.bodyRegular,
-    fontSize: 14,
-    color: Colors.mocha,
-    opacity: 0.8,
-  },
+  content: { alignItems: 'center' },
+  logo: { fontFamily: Typography.heading, fontSize: 56, color: Colors.mocha, letterSpacing: -1 },
+  tagline: { fontFamily: Typography.body, fontSize: 16, color: Colors.textSecondary, marginTop: 8 },
 });
-
-export default SplashScreen;

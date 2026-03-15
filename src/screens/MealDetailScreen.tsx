@@ -1,244 +1,282 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { HomeStackParamList, CartItem } from '../types';
-import { Colors, Typography, Spacing, Radius } from '../constants/theme';
-import { CookAvatar, PrimaryButton } from '../components/ui';
-import FeedANeighbour from '../components/FeedANeighbour';
-import { addToCart } from '../utils/cart';
+import { useCart } from '../hooks/useCart';
+import { FeedANeighbourModal } from '../components/FeedANeighbourModal';
+import { Colors, Typography, Spacing, Radius, Shadows } from '../lib/theme';
+import { HomeStackParamList } from '../types';
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'MealDetail'> & {
-  cartItems: CartItem[];
-  setCartItems: (items: CartItem[]) => void;
-};
+type Props = NativeStackScreenProps<HomeStackParamList, 'MealDetail'>;
 
-const MealDetailScreen: React.FC<Props> = ({ route, navigation, cartItems, setCartItems }) => {
+export default function MealDetailScreen({ route, navigation }: Props) {
   const { meal } = route.params;
-  const [feedModalVisible, setFeedModalVisible] = useState(false);
-  const inCart = cartItems.find(i => i.meal.id === meal.id)?.quantity ?? 0;
-  const batchPct = ((meal.batchTotal - meal.batchRemaining) / meal.batchTotal) * 100;
-  const isLowStock = meal.batchRemaining <= 3;
+  const { addToCart, clearAndAdd, getQuantity } = useCart();
+  const [feedVisible, setFeedVisible] = useState(false);
+
+  const inCart = getQuantity(meal.id);
+  const isLowStock = meal.portions_available <= 3;
+
+  const chefInitials = meal.chef?.kitchen_name
+    ? meal.chef.kitchen_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '??';
+
+  async function handleAdd() {
+    const result = await addToCart(meal);
+    if (result === 'different_chef') {
+      Alert.alert(
+        'Different chef',
+        'Your cart has items from another kitchen. Start a new cart?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Start new cart', style: 'destructive', onPress: () => clearAndAdd(meal) },
+        ]
+      );
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.turmericLight} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero */}
         <View style={styles.hero}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.heroEmoji}>{meal.emoji}</Text>
-          <View style={styles.heroBadge}>
-            <View style={styles.heroBadgeDot} />
-            <Text style={styles.heroBadgeText}>Cooked at {meal.cookedAt}</Text>
+          <Text style={styles.heroEmoji}>🍲</Text>
+          <View style={styles.heroBadges}>
+            {meal.is_veg && (
+              <View style={[styles.badge, { backgroundColor: '#E8F5E9' }]}>
+                <Text style={[styles.badgeText, { color: '#2E7D32' }]}>🟢 Veg</Text>
+              </View>
+            )}
+            {meal.is_jain && (
+              <View style={[styles.badge, { backgroundColor: '#FFF8E1' }]}>
+                <Text style={[styles.badgeText, { color: '#F57F17' }]}>Jain</Text>
+              </View>
+            )}
+            {isLowStock && (
+              <View style={[styles.badge, { backgroundColor: '#FFF3E0' }]}>
+                <Text style={[styles.badgeText, { color: Colors.warning }]}>
+                  🔥 Only {meal.portions_available} left
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
         <View style={styles.content}>
-          {/* Title & meta */}
           <Text style={styles.mealName}>{meal.name}</Text>
           <Text style={styles.meta}>
-            ⭐ {meal.rating} ({meal.reviewCount} reviews) · 📍 {meal.distanceKm}km · 🕒 {meal.etaMinutes} mins
+            {meal.cuisine_type} · Serves {meal.serves} · {meal.portions_available} portions left
           </Text>
 
-          {/* Maa's Batch */}
-          <View style={styles.batchCard}>
-            <View style={styles.batchTop}>
-              <Text style={styles.batchTitle}>🍳 Maa's Batch Today</Text>
-              <Text style={[styles.batchCount, { color: isLowStock ? Colors.warning : Colors.mocha }]}>
-                {meal.batchRemaining} of {meal.batchTotal} left
-              </Text>
-            </View>
-            <View style={styles.batchBar}>
-              <View style={[styles.batchFill, {
-                width: `${batchPct}%` as any,
-                backgroundColor: isLowStock ? Colors.warning : Colors.turmeric,
-              }]} />
-            </View>
-            <Text style={styles.batchNote}>
-              {isLowStock ? '🔥 Selling fast! Order before it runs out.' : 'Good availability — no rush!'}
-            </Text>
-          </View>
+          {!!meal.description && (
+            <Text style={styles.description}>{meal.description}</Text>
+          )}
 
-          {/* Cook card */}
-          <View style={styles.cookCard}>
-            <View style={styles.cookTop}>
-              <CookAvatar initials={meal.cook.initials} color={meal.cook.avatarColor} size={52} />
-              <View style={styles.cookInfo}>
-                <Text style={styles.cookName}>{meal.cook.name}</Text>
-                <Text style={styles.cookSub}>Home cook · {meal.cook.cuisine} cuisine</Text>
-                <Text style={styles.cookSub}>⭐ {meal.cook.rating} · {meal.cook.totalOrders} orders served</Text>
+          {/* Chef card */}
+          {meal.chef && (
+            <TouchableOpacity
+              style={styles.chefCard}
+              onPress={() => navigation.navigate('ChefProfile', { chefId: meal.chef_id })}
+              activeOpacity={0.85}
+            >
+              <View style={styles.chefAvatar}>
+                <Text style={styles.chefInitials}>{chefInitials}</Text>
               </View>
-            </View>
-            {meal.cook.story && (
-              <View style={styles.storyBox}>
-                <Text style={styles.storyLabel}>TODAY'S STORY</Text>
-                <Text style={styles.storyText}>"{meal.cook.story}"</Text>
+              <View style={styles.chefInfo}>
+                <Text style={styles.chefName}>{meal.chef.kitchen_name}</Text>
+                <Text style={styles.chefMeta}>
+                  ⭐ {meal.chef.rating.toFixed(1)} · {meal.chef.area}
+                </Text>
               </View>
-            )}
-          </View>
-
-          {/* Description */}
-          <Text style={styles.sectionTitle}>About this meal</Text>
-          <Text style={styles.description}>{meal.description}</Text>
-
-          {/* Items */}
-          <Text style={styles.sectionTitle}>What you get</Text>
-          {meal.items.map((item, i) => (
-            <View key={i} style={styles.itemRow}>
-              <View style={styles.itemDot} />
-              <Text style={styles.itemText}>{item}</Text>
-            </View>
-          ))}
+              <Text style={styles.chefArrow}>›</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Tags */}
-          <View style={styles.tagsRow}>
-            {meal.tags.map(tag => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
+          {meal.tags && meal.tags.length > 0 && (
+            <View style={styles.tagsRow}>
+              {meal.tags.map(tag => (
+                <View key={tag} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
-          {/* Feed a Neighbour trigger */}
+          {/* Feed a neighbour */}
           <TouchableOpacity
             style={styles.feedTrigger}
-            onPress={() => setFeedModalVisible(true)}
+            onPress={() => setFeedVisible(true)}
           >
-            <Text style={styles.feedTriggerText}>🤲 Feed a neighbour</Text>
+            <Text style={styles.feedText}>🤲 Feed a neighbour with this meal</Text>
           </TouchableOpacity>
-
-          <View style={{ height: 100 }} />
         </View>
       </ScrollView>
 
-      {/* Fixed bottom bar */}
+      {/* Bottom bar */}
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.priceLabel}>Price</Text>
           <Text style={styles.price}>₹{meal.price}</Text>
         </View>
-        <View style={styles.bottomBtnWrap}>
-          {inCart > 0 ? (
-            <PrimaryButton
-              label={`✓ ${inCart} in Cart  —  Go to Cart →`}
-              onPress={() => navigation.navigate('Cart')}
-            />
-          ) : (
-            <PrimaryButton
-              label="Add to Cart"
-              onPress={() => setCartItems(addToCart(cartItems, meal))}
-            />
-          )}
-        </View>
+        <TouchableOpacity
+          style={[styles.addBtn, inCart > 0 && styles.addBtnFilled]}
+          onPress={inCart > 0 ? () => navigation.navigate('Cart') : handleAdd}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.addBtnText, inCart > 0 && { color: Colors.ivory }]}>
+            {inCart > 0 ? `✓ ${inCart} in Cart — View Cart →` : 'Add to Cart'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Feed a Neighbour modal */}
-      <FeedANeighbour
-        meal={meal}
-        visible={feedModalVisible}
-        onClose={() => setFeedModalVisible(false)}
+      <FeedANeighbourModal
+        visible={feedVisible}
+        onClose={() => setFeedVisible(false)}
+        onConfirm={(_msg) => setFeedVisible(false)}
       />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
-  scroll: { paddingBottom: Spacing.xl },
   hero: {
-    backgroundColor: Colors.turmericLight, height: 200,
-    alignItems: 'center', justifyContent: 'center', position: 'relative',
+    backgroundColor: Colors.turmericLight,
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   backBtn: {
-    position: 'absolute', top: 12, left: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 12,
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
+    position: 'absolute',
+    top: 12,
+    left: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 12,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backText: { fontSize: 20, color: Colors.text },
-  heroEmoji: { fontSize: 90 },
-  heroBadge: {
-    position: 'absolute', bottom: 12, left: 16,
-    backgroundColor: 'rgba(92,58,33,0.85)', borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 5,
-    flexDirection: 'row', alignItems: 'center', gap: 5,
+  heroEmoji: { fontSize: 86 },
+  heroBadges: {
+    position: 'absolute',
+    bottom: 12,
+    left: 16,
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
-  heroBadgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4CAF50' },
-  heroBadgeText: { fontFamily: Typography.bodyBold, fontSize: 12, color: Colors.ivory },
+  badge: {
+    borderRadius: Radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeText: { fontFamily: Typography.semiBold, fontSize: 11 },
   content: { padding: Spacing.md },
   mealName: {
-    fontFamily: Typography.display, fontSize: Typography.h2,
-    color: Colors.text, marginBottom: 6,
+    fontFamily: Typography.heading,
+    fontSize: 26,
+    color: Colors.mocha,
+    marginBottom: 4,
   },
   meta: {
-    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
-    color: Colors.textSecondary, marginBottom: Spacing.md,
-  },
-  batchCard: {
-    backgroundColor: Colors.turmericLight, borderRadius: Radius.lg,
-    padding: Spacing.md, marginBottom: Spacing.md,
-  },
-  batchTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
-  batchTitle: { fontFamily: Typography.bodyBold, fontSize: Typography.bodySmall, color: Colors.mocha },
-  batchCount: { fontFamily: Typography.bodyBold, fontSize: Typography.bodySmall },
-  batchBar: {
-    height: 8, backgroundColor: Colors.ivoryDark,
-    borderRadius: 4, overflow: 'hidden', marginBottom: 6,
-  },
-  batchFill: { height: '100%', borderRadius: 4 },
-  batchNote: { fontFamily: Typography.bodyRegular, fontSize: 11, color: Colors.textMuted },
-  cookCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md,
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: Colors.border,
-  },
-  cookTop: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
-  cookInfo: { flex: 1, justifyContent: 'center' },
-  cookName: { fontFamily: Typography.display, fontSize: 17, color: Colors.text, marginBottom: 2 },
-  cookSub: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textSecondary },
-  storyBox: {
-    backgroundColor: Colors.ivory, borderRadius: Radius.md, padding: 12,
-    borderLeftWidth: 3, borderLeftColor: Colors.turmeric,
-  },
-  storyLabel: {
-    fontFamily: Typography.bodyBold, fontSize: 10, color: Colors.textMuted,
-    marginBottom: 4, letterSpacing: 0.5,
-  },
-  storyText: {
-    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
-    color: Colors.mocha, fontStyle: 'italic', lineHeight: 20,
-  },
-  sectionTitle: {
-    fontFamily: Typography.display, fontSize: 17, color: Colors.text,
-    marginBottom: Spacing.sm, marginTop: Spacing.md,
+    fontFamily: Typography.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
   },
   description: {
-    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
-    color: Colors.textSecondary, lineHeight: 22,
+    fontFamily: Typography.body,
+    fontSize: 14,
+    color: Colors.text,
+    lineHeight: 22,
+    marginBottom: Spacing.md,
   },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.sm },
-  itemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.turmeric },
-  itemText: { fontFamily: Typography.bodyRegular, fontSize: Typography.body, color: Colors.text },
-  tagsRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', marginTop: Spacing.md },
+  chefCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  chefAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.turmeric,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chefInitials: { fontFamily: Typography.heading, fontSize: 18, color: Colors.mocha },
+  chefInfo: { flex: 1 },
+  chefName: { fontFamily: Typography.semiBold, fontSize: 15, color: Colors.text },
+  chefMeta: {
+    fontFamily: Typography.body,
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  chefArrow: { fontSize: 22, color: Colors.textMuted },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
   tag: {
-    backgroundColor: Colors.turmericLight, borderRadius: Radius.full,
-    paddingHorizontal: 12, paddingVertical: 4,
+    backgroundColor: Colors.turmericLight,
+    borderRadius: Radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
-  tagText: { fontFamily: Typography.bodyBold, fontSize: Typography.caption, color: Colors.mocha },
+  tagText: { fontFamily: Typography.semiBold, fontSize: 12, color: Colors.mocha },
   feedTrigger: {
-    alignItems: 'center', marginTop: Spacing.lg, paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    marginTop: Spacing.md,
   },
-  feedTriggerText: {
-    fontFamily: Typography.bodyRegular, fontSize: 13, color: Colors.mocha,
-  },
+  feedText: { fontFamily: Typography.body, fontSize: 13, color: Colors.mochaSoft },
   bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border,
-    padding: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
   },
-  priceLabel: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textMuted },
-  price: { fontFamily: Typography.display, fontSize: 22, color: Colors.mocha },
-  bottomBtnWrap: { flex: 1 },
+  priceLabel: {
+    fontFamily: Typography.body,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  price: { fontFamily: Typography.heading, fontSize: 22, color: Colors.mocha },
+  addBtn: {
+    flex: 1,
+    height: 52,
+    backgroundColor: Colors.turmeric,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(Shadows.button as object),
+  },
+  addBtnFilled: { backgroundColor: Colors.mocha },
+  addBtnText: { fontFamily: Typography.bold, fontSize: 15, color: Colors.mocha },
 });
-
-export default MealDetailScreen;

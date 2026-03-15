@@ -1,100 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  FlatList, RefreshControl, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View, ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet,
+  FlatList, ScrollView, RefreshControl, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { HomeStackParamList, CartItem, Meal } from '../types';
-import { Colors, Typography, Spacing, Radius } from '../constants/theme';
-import { FilterChip, SectionHeader } from '../components/ui';
-import MealCard from '../components/MealCard';
-import MaaOnlineBanner from '../components/MaaOnlineBanner';
-import TomorrowSection from '../components/TomorrowSection';
-import { CUISINE_FILTERS } from '../constants/mockData';
-import { addToCart, getItemCount } from '../utils/cart';
 import { useMeals } from '../hooks/useMeals';
+import { useCart } from '../hooks/useCart';
+import { useLocation } from '../hooks/useLocation';
+import { useAuth } from '../hooks/useAuth';
+import { MealCard } from '../components/MealCard';
+import { MaaOnlineBanner } from '../components/MaaOnlineBanner';
+import { TomorrowSection } from '../components/TomorrowSection';
+import { CartFloatingButton } from '../components/CartFloatingButton';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { FilterChip } from '../components/FilterChip';
+import { Colors, Typography, Spacing, Radius } from '../lib/theme';
+import { HomeStackParamList, Meal } from '../types';
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'Home'> & {
-  cartItems: CartItem[];
-  setCartItems: (items: CartItem[]) => void;
-};
+type Props = NativeStackScreenProps<HomeStackParamList, 'HomeMain'>;
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning! 👋';
-  if (hour < 17) return 'Good afternoon! 👋';
-  return 'Good evening! 👋';
+const CUISINE_FILTERS = ['All', 'North Indian', 'South Indian', 'Bengali', 'Gujarati', 'Punjabi', 'Street Food'];
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) => {
+export default function HomeScreen({ navigation }: Props) {
+  const { profile } = useAuth();
+  const { location } = useLocation();
   const [filter, setFilter] = useState('All');
-  const [search, setSearch] = useState('');
-  const cartCount = getItemCount(cartItems);
-
   const { meals, loading, refetch } = useMeals({
     cuisine: filter !== 'All' ? filter : undefined,
-    search: search || undefined,
   });
+  const { totalItems, total, addToCart, clearAndAdd } = useCart();
 
-  const filteredMeals = meals;
+  const handleAdd = useCallback(async (meal: Meal) => {
+    const result = await addToCart(meal);
+    if (result === 'different_chef') await clearAndAdd(meal);
+  }, [addToCart, clearAndAdd]);
 
-  const handleAdd = (meal: Meal) => setCartItems(addToCart(cartItems, meal));
-  const getCartQty = (mealId: string) => cartItems.find(i => i.meal.id === mealId)?.quantity ?? 0;
-
-  const onRefresh = async () => { await refetch(); };
+  const firstName = profile?.full_name?.split(' ')[0] ?? '';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.ivory} />
       <FlatList
-        data={filteredMeals}
+        data={meals}
         keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} tintColor={Colors.turmeric} />}
-        ListHeaderComponent={() => (
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refetch} tintColor={Colors.turmeric} />
+        }
+        ListHeaderComponent={
           <>
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.locationRow}>
                 <Text style={styles.locationPin}>📍</Text>
-                <Text style={styles.locationText}>Banjara Hills, Hyderabad</Text>
-                <Text style={styles.locationChevron}>›</Text>
+                <Text style={styles.locationText} numberOfLines={1}>
+                  {location ? `${location.area}, ${location.city}` : 'Locating...'}
+                </Text>
+                <Text style={styles.locationChev}>›</Text>
               </View>
               <View style={styles.headerBottom}>
-                <Text style={styles.greeting}>{getGreeting()}</Text>
+                <Text style={styles.greeting} numberOfLines={1}>
+                  {getGreeting()}{firstName ? `, ${firstName}` : ''} 👋
+                </Text>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('Cart')}
-                  style={styles.cartBtn}
+                  style={styles.searchIconBtn}
+                  onPress={() => navigation.navigate('Search')}
                 >
-                  <Text style={styles.cartEmoji}>🛒</Text>
-                  {cartCount > 0 && (
-                    <View style={styles.cartBadge}>
-                      <Text style={styles.cartBadgeText}>{cartCount}</Text>
-                    </View>
-                  )}
+                  <Text style={{ fontSize: 18 }}>🔍</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Maa Online Banner */}
-            <MaaOnlineBanner />
+            <MaaOnlineBanner count={1} onDismiss={() => {}} />
 
-            {/* Search */}
-            <View style={styles.searchRow}>
-              <Text style={styles.searchIcon}>🔍</Text>
-              <TextInput
-                style={styles.searchInput}
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search meals, cooks, cuisines..."
-                placeholderTextColor={Colors.textMuted}
-              />
-            </View>
+            {/* Search bar (tap to navigate) */}
+            <TouchableOpacity
+              style={styles.searchBar}
+              onPress={() => navigation.navigate('Search')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.searchBarIcon}>🔍</Text>
+              <Text style={styles.searchPlaceholder}>Search meals, cuisines, chefs...</Text>
+            </TouchableOpacity>
 
-            {/* Filter chips */}
+            {/* Filters */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filters}
+              contentContainerStyle={styles.filtersScroll}
             >
               {CUISINE_FILTERS.map(f => (
                 <FilterChip
@@ -106,87 +108,143 @@ const HomeScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
               ))}
             </ScrollView>
 
-            <SectionHeader
-              title="Fresh & Ready 🍳"
-              subtitle={`${filteredMeals.length} meals within 3km`}
-              style={styles.sectionHeader}
-            />
+            <Text style={styles.sectionTitle}>
+              Fresh & Ready 🍳{' '}
+              <Text style={styles.sectionCount}>({meals.length} meals)</Text>
+            </Text>
+
+            {loading && <LoadingSkeleton type="mealCard" count={4} />}
           </>
-        )}
+        }
         renderItem={({ item }) => (
-          <View style={styles.cardWrapper}>
+          <View style={styles.cardWrap}>
             <MealCard
               meal={item}
               onPress={() => navigation.navigate('MealDetail', { meal: item })}
-              onAdd={() => handleAdd(item)}
-              cartQuantity={getCartQty(item.id)}
+              onAddToCart={() => handleAdd(item)}
             />
           </View>
         )}
-        ListEmptyComponent={() => (
-          <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🍽️</Text>
-            <Text style={styles.emptyTitle}>No meals found</Text>
-            <Text style={styles.emptySubtitle}>Try a different filter or search</Text>
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.empty}>
+              <Text style={{ fontSize: 52, textAlign: 'center', marginBottom: Spacing.md }}>🍽️</Text>
+              <Text style={styles.emptyTitle}>No meals found</Text>
+              <Text style={styles.emptySub}>Try a different filter or check back later</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          <View style={{ paddingHorizontal: Spacing.md }}>
+            <TomorrowSection meals={[]} onPreBook={() => {}} />
+            <View style={{ height: 100 }} />
           </View>
-        )}
-        ListFooterComponent={() => (
-          <View style={{ paddingTop: Spacing.lg }}>
-            <TomorrowSection />
-            <View style={{ height: Spacing.xl }} />
-          </View>
-        )}
+        }
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
+      <CartFloatingButton itemCount={totalItems} total={total} onPress={() => navigation.navigate('Cart')} />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
   list: { paddingBottom: Spacing.xl },
-  header: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  locationPin: { fontSize: 13 },
-  locationText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.caption, color: Colors.textSecondary },
-  locationChevron: { fontSize: 16, color: Colors.textMuted },
-  headerBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
-  cartBtn: {
-    width: 44, height: 44, backgroundColor: Colors.surface,
-    borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
+  row: { paddingHorizontal: Spacing.md, gap: Spacing.sm },
+  header: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
   },
-  cartEmoji: { fontSize: 20 },
-  cartBadge: {
-    position: 'absolute', top: -6, right: -6,
-    backgroundColor: Colors.turmeric, width: 20, height: 20,
-    borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.ivory,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
   },
-  cartBadgeText: { fontFamily: Typography.bodyBold, fontSize: 10, color: Colors.mocha },
-  searchRow: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border,
-    borderRadius: Radius.md, paddingHorizontal: Spacing.md,
-    marginHorizontal: Spacing.md, marginBottom: Spacing.md, height: 48,
+  locationPin: { fontSize: 12 },
+  locationText: {
+    fontFamily: Typography.semiBold,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    flex: 1,
   },
-  searchIcon: { fontSize: 16 },
-  searchInput: {
-    flex: 1, fontFamily: Typography.bodyRegular,
-    fontSize: Typography.bodySmall, color: Colors.text,
+  locationChev: { fontSize: 16, color: Colors.textMuted },
+  headerBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  filters: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
-  sectionHeader: { paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
-  cardWrapper: { paddingHorizontal: Spacing.md },
-  empty: { alignItems: 'center', paddingVertical: Spacing.xxl },
-  emptyEmoji: { fontSize: 52, marginBottom: Spacing.md },
-  emptyTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
-  emptySubtitle: {
-    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
-    color: Colors.textMuted, marginTop: 6,
+  greeting: {
+    fontFamily: Typography.heading,
+    fontSize: 22,
+    color: Colors.mocha,
+    flex: 1,
+  },
+  searchIconBtn: {
+    width: 42,
+    height: 42,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    height: 48,
+  },
+  searchBarIcon: { fontSize: 14 },
+  searchPlaceholder: {
+    fontFamily: Typography.body,
+    fontSize: 14,
+    color: Colors.textMuted,
+    flex: 1,
+  },
+  filtersScroll: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: Typography.heading,
+    fontSize: 18,
+    color: Colors.mocha,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  sectionCount: {
+    fontFamily: Typography.body,
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  cardWrap: { flex: 1, marginBottom: Spacing.sm },
+  empty: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyTitle: {
+    fontFamily: Typography.heading,
+    fontSize: 20,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  emptySub: {
+    fontFamily: Typography.body,
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
 });
-
-export default HomeScreen;

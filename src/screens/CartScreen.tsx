@@ -1,23 +1,22 @@
 import React from 'react';
 import {
-  FlatList, StyleSheet, Text, TouchableOpacity, View,
+  View, Text, TouchableOpacity, StyleSheet, FlatList, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { HomeStackParamList, CartItem } from '../types';
-import { Colors, Typography, Spacing, Radius, Shadows } from '../constants/theme';
-import { PrimaryButton, Divider } from '../components/ui';
-import { calculateCart, updateQuantity, removeFromCart } from '../utils/cart';
+import { useCart } from '../hooks/useCart';
+import { Colors, Typography, Spacing, Radius, Shadows } from '../lib/theme';
+import { HomeStackParamList } from '../types';
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'Cart'> & {
-  cartItems: CartItem[];
-  setCartItems: (items: CartItem[]) => void;
-};
+type Props = NativeStackScreenProps<HomeStackParamList, 'Cart'>;
 
-const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) => {
-  const cart = calculateCart(cartItems);
+export default function CartScreen({ navigation }: Props) {
+  const {
+    items, subtotal, platformFee, deliveryFee, gst, total,
+    addToCart, removeFromCart,
+  } = useCart();
 
-  if (cartItems.length === 0) {
+  if (items.length === 0) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
@@ -28,14 +27,12 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>🛒</Text>
+          <Text style={{ fontSize: 64, marginBottom: Spacing.md }}>🛒</Text>
           <Text style={styles.emptyTitle}>Your cart is empty</Text>
-          <Text style={styles.emptySubtitle}>Add some delicious home-cooked meals</Text>
-          <PrimaryButton
-            label="Browse meals"
-            onPress={() => navigation.goBack()}
-            style={{ marginTop: Spacing.xl, marginHorizontal: Spacing.lg }}
-          />
+          <Text style={styles.emptySub}>Add some delicious home-cooked meals</Text>
+          <TouchableOpacity style={styles.browseBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.browseBtnText}>Browse meals</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -43,6 +40,7 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>←</Text>
@@ -52,36 +50,39 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
       </View>
 
       <FlatList
-        data={cartItems}
+        data={items}
         keyExtractor={item => item.meal.id}
         contentContainerStyle={styles.list}
-        ListHeaderComponent={() => (
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
           <View style={styles.addressCard}>
             <Text style={styles.addressLabel}>📍 DELIVERING TO</Text>
-            <Text style={styles.addressText}>12, Green Park, Banjara Hills, Hyderabad</Text>
+            <Text style={styles.addressText}>Your saved address</Text>
             <TouchableOpacity>
-              <Text style={styles.changeLink}>Change</Text>
+              <Text style={styles.changeLink}>Change →</Text>
             </TouchableOpacity>
           </View>
-        )}
+        }
         renderItem={({ item }) => (
           <View style={styles.itemRow}>
-            <Text style={styles.itemEmoji}>{item.meal.emoji}</Text>
+            <Text style={styles.itemEmoji}>🍲</Text>
             <View style={styles.itemInfo}>
               <Text style={styles.itemName} numberOfLines={1}>{item.meal.name}</Text>
-              <Text style={styles.itemCook}>{item.meal.cook.name}</Text>
+              <Text style={styles.itemChef}>
+                {item.meal.chef?.kitchen_name ?? 'Home kitchen'}
+              </Text>
             </View>
             <View style={styles.qtyRow}>
               <TouchableOpacity
                 style={styles.qtyBtn}
-                onPress={() => setCartItems(updateQuantity(cartItems, item.meal.id, -1))}
+                onPress={() => removeFromCart(item.meal.id)}
               >
                 <Text style={styles.qtyBtnText}>−</Text>
               </TouchableOpacity>
               <Text style={styles.qty}>{item.quantity}</Text>
               <TouchableOpacity
                 style={[styles.qtyBtn, styles.qtyBtnAdd]}
-                onPress={() => setCartItems(updateQuantity(cartItems, item.meal.id, 1))}
+                onPress={() => addToCart(item.meal)}
               >
                 <Text style={[styles.qtyBtnText, { color: Colors.mocha }]}>+</Text>
               </TouchableOpacity>
@@ -89,109 +90,195 @@ const CartScreen: React.FC<Props> = ({ navigation, cartItems, setCartItems }) =>
             <Text style={styles.itemPrice}>₹{item.meal.price * item.quantity}</Text>
           </View>
         )}
-        ItemSeparatorComponent={() => <Divider style={{ marginHorizontal: Spacing.md }} />}
-        ListFooterComponent={() => (
+        ItemSeparatorComponent={() => (
+          <View style={{ height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md }} />
+        )}
+        ListFooterComponent={
           <View style={styles.billCard}>
             <Text style={styles.billTitle}>Price Details</Text>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Subtotal</Text>
-              <Text style={styles.billValue}>₹{cart.subtotal}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Platform fee</Text>
-              <Text style={styles.billValue}>₹{cart.platformFee}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Delivery</Text>
-              <Text style={styles.billValue}>₹{cart.deliveryFee}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>GST (5%)</Text>
-              <Text style={styles.billValue}>₹{cart.gst}</Text>
-            </View>
-            <Divider style={{ marginVertical: Spacing.sm }} />
+            {[
+              ['Subtotal', `₹${subtotal}`],
+              ['Platform fee', `₹${platformFee}`],
+              ['Delivery', `₹${deliveryFee}`],
+              ['GST (5%)', `₹${Math.round(gst)}`],
+            ].map(([label, value]) => (
+              <View key={label} style={styles.billRow}>
+                <Text style={styles.billLabel}>{label}</Text>
+                <Text style={styles.billValue}>{value}</Text>
+              </View>
+            ))}
+            <View style={{ height: 1, backgroundColor: Colors.border, marginVertical: Spacing.sm }} />
             <View style={styles.billRow}>
               <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>₹{cart.total}</Text>
+              <Text style={styles.totalValue}>₹{Math.round(total)}</Text>
             </View>
           </View>
-        )}
-        showsVerticalScrollIndicator={false}
+        }
       />
 
       <View style={styles.bottomBar}>
-        <PrimaryButton
-          label={`Pay ₹${cart.total} →`}
+        <TouchableOpacity
+          style={styles.payBtn}
           onPress={() => navigation.navigate('Payment')}
-        />
+          activeOpacity={0.85}
+        >
+          <Text style={styles.payBtnText}>Pay ₹{Math.round(total)} →</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ivory },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
-    backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   backText: { fontSize: 24, color: Colors.text, width: 32 },
-  headerTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
-  emptyEmoji: { fontSize: 64, marginBottom: Spacing.md },
-  emptyTitle: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
-  emptySubtitle: {
-    fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall,
-    color: Colors.textMuted, marginTop: 6, textAlign: 'center',
+  headerTitle: { fontFamily: Typography.heading, fontSize: 20, color: Colors.text },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.xl,
   },
+  emptyTitle: {
+    fontFamily: Typography.heading,
+    fontSize: 20,
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  emptySub: {
+    fontFamily: Typography.body,
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginBottom: Spacing.xl,
+    textAlign: 'center',
+  },
+  browseBtn: {
+    height: 52,
+    paddingHorizontal: Spacing.xl,
+    backgroundColor: Colors.turmeric,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  browseBtnText: { fontFamily: Typography.bold, fontSize: 15, color: Colors.mocha },
   list: { padding: Spacing.md, paddingBottom: 100 },
   addressCard: {
-    backgroundColor: Colors.turmericLight, borderRadius: Radius.lg,
-    padding: Spacing.md, marginBottom: Spacing.md,
+    backgroundColor: Colors.turmericLight,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
   },
   addressLabel: {
-    fontFamily: Typography.bodyBold, fontSize: Typography.tiny,
-    color: Colors.textMuted, letterSpacing: 0.5, marginBottom: 4,
+    fontFamily: Typography.bold,
+    fontSize: 10,
+    color: Colors.textMuted,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  addressText: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.mocha },
+  addressText: {
+    fontFamily: Typography.semiBold,
+    fontSize: 13,
+    color: Colors.mocha,
+  },
   changeLink: {
-    fontFamily: Typography.bodySemiBold, fontSize: Typography.caption,
-    color: Colors.turmeric, marginTop: 4,
+    fontFamily: Typography.semiBold,
+    fontSize: 12,
+    color: Colors.turmericDeep,
+    marginTop: 4,
   },
   itemRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
   },
-  itemEmoji: { fontSize: 36, marginRight: Spacing.sm },
+  itemEmoji: { fontSize: 34, marginRight: Spacing.sm },
   itemInfo: { flex: 1, marginRight: Spacing.sm },
-  itemName: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.text },
-  itemCook: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textMuted },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginRight: Spacing.sm },
+  itemName: { fontFamily: Typography.semiBold, fontSize: 14, color: Colors.text },
+  itemChef: { fontFamily: Typography.body, fontSize: 11, color: Colors.textMuted },
+  qtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginRight: Spacing.sm,
+  },
   qtyBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    borderWidth: 1.5, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   qtyBtnAdd: { backgroundColor: Colors.turmeric, borderColor: Colors.turmeric },
-  qtyBtnText: { fontFamily: Typography.bodyBold, fontSize: 18, color: Colors.textSecondary },
-  qty: { fontFamily: Typography.bodyBold, fontSize: Typography.body, color: Colors.text, minWidth: 20, textAlign: 'center' },
-  itemPrice: { fontFamily: Typography.display, fontSize: 16, color: Colors.mocha },
+  qtyBtnText: {
+    fontFamily: Typography.bold,
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
+  qty: {
+    fontFamily: Typography.bold,
+    fontSize: 15,
+    color: Colors.text,
+    minWidth: 18,
+    textAlign: 'center',
+  },
+  itemPrice: { fontFamily: Typography.heading, fontSize: 15, color: Colors.mocha },
   billCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md,
-    marginTop: Spacing.md, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  billTitle: { fontFamily: Typography.display, fontSize: 17, color: Colors.text, marginBottom: Spacing.md },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
-  billLabel: { fontFamily: Typography.bodyRegular, fontSize: Typography.bodySmall, color: Colors.textSecondary },
-  billValue: { fontFamily: Typography.bodySemiBold, fontSize: Typography.bodySmall, color: Colors.text },
-  totalLabel: { fontFamily: Typography.display, fontSize: Typography.body, color: Colors.text },
-  totalValue: { fontFamily: Typography.display, fontSize: Typography.body, color: Colors.mocha },
+  billTitle: {
+    fontFamily: Typography.heading,
+    fontSize: 17,
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  billLabel: {
+    fontFamily: Typography.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  billValue: { fontFamily: Typography.semiBold, fontSize: 13, color: Colors.text },
+  totalLabel: { fontFamily: Typography.heading, fontSize: 16, color: Colors.text },
+  totalValue: { fontFamily: Typography.heading, fontSize: 16, color: Colors.mocha },
   bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: Spacing.md, backgroundColor: Colors.surface,
-    borderTopWidth: 1, borderTopColor: Colors.border,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
+  payBtn: {
+    height: 56,
+    backgroundColor: Colors.turmeric,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(Shadows.button as object),
+  },
+  payBtnText: { fontFamily: Typography.bold, fontSize: 16, color: Colors.mocha },
 });
-
-export default CartScreen;

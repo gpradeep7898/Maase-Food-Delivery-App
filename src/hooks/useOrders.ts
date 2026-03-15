@@ -1,89 +1,120 @@
-import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../utils/supabase';
-import type { Order, OrderStatus } from '../types';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { Order } from '../types';
 
-export function useOrders(userId: string | null) {
+interface PlaceOrderData {
+  chef_id: string;
+  delivery_address_id: string;
+  items: {
+    meal_id: string;
+    meal_name: string;
+    meal_price: number;
+    quantity: number;
+    subtotal: number;
+  }[];
+  subtotal: number;
+  platform_fee: number;
+  delivery_fee: number;
+  gst: number;
+  total: number;
+  notes?: string;
+  is_feed_neighbour?: boolean;
+}
+
+export function useOrders(userId?: string) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOrders = useCallback(async () => {
-    if (!userId) { setLoading(false); return; }
-    setLoading(true);
-    const { data } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        cook:cooks(id, name, cuisine, avatar_color, initials, phone),
-        address:addresses(*),
-        items:order_items(*, meal:meals(id, name, emoji, price))
-      `)
-      .eq('customer_id', userId)
-      .order('created_at', { ascending: false });
-
-    setOrders((data ?? []).map(adaptOrder));
-    setLoading(false);
-  }, [userId]);
-
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
-  // Realtime order status updates
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    fetchOrders();
+
     const channel = supabase
-      .channel(`orders-${userId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'orders',
-        filter: `customer_id=eq.${userId}`,
-      }, (payload: any) => {
-        setOrders(prev => prev.map(o =>
-          o.id === payload.new.id ? { ...o, status: payload.new.status as OrderStatus } : o
-        ));
-      })
+      .channel(`orders_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `customer_id=eq.${userId}` },
+        () => fetchOrders(),
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  return { orders, loading, refetch: fetchOrders };
-}
+  async function fetchOrders() {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('orders')
+        .select('*, order_items(*), chef:chefs(*)')
+        .eq('customer_id', userId)
+        .order('created_at', { ascending: false });
+      setOrders(data ?? []);
+    } catch (e) {
+      console.error('fetchOrders error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-function adaptOrder(o: any): Order {
-  return {
-    id: o.id,
-    orderId: o.display_id,
-    customerId: o.customer_id,
-    cook: {
-      id: o.cook.id,
-      name: o.cook.name,
-      cuisine: o.cook.cuisine,
-      avatarColor: o.cook.avatar_color,
-      initials: o.cook.initials,
-      phone: o.cook.phone,
-      userId: o.cook.id,
-      bio: null, avatarUrl: null,
-      rating: 0, totalOrders: 0,
-      isOnline: false, locality: '', city: '', state: '',
-      isVerified: true, createdAt: '',
-    },
-    items: (o.items ?? []).map((i: any) => ({
-      id: i.id,
-      meal: i.meal,
-      quantity: i.quantity,
-      price: i.price,
-    })),
-    status: o.status,
-    subtotal: o.subtotal,
-    deliveryFee: o.delivery_fee,
-    platformFee: o.platform_fee,
-    gst: o.gst,
-    total: o.total,
-    deliveryAddress: o.address,
-    paymentMethod: o.payment_method,
-    paymentId: o.payment_id,
-    estimatedDelivery: o.estimated_at,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
-  };
+  async function placeOrder(orderData: PlaceOrderData): Promise<Order> {
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        customer_id: userId,
+        chef_id: orderData.chef_id,
+        delivery_address_id: orderData.delivery_address_id,
+        subtotal: orderData.subtotal,
+        platform_fee: orderData.platform_fee,
+        delivery_fee: orderData.delivery_fee,
+        gst: orderData.gst,
+        total: orderData.total,
+        notes: orderData.notes,
+        is_feed_neighbour: orderData.is_feed_neighbour ?? false,
+        payment_status: 'pending',
+        payment_method: 'upi',
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    const orderItems = orderData.items.map(item => ({
+      order_id: order.id,
+      meal_id: item.meal_id,
+      meal_name: item.meal_name,
+      meal_price: item.meal_price,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    // Mark payment as paid (mock)
+    await supabase
+      .from('orders')
+      .update({ payment_status: 'paid' })
+      .eq('id', order.id);
+
+    return order as Order;
+  }
+
+  async function getOrderById(orderId: string): Promise<Order | null> {
+    const { data } = await supabase
+      .from('orders')
+      .select('*, order_items(*), chef:chefs(*)')
+      .eq('id', orderId)
+      .single();
+    return data ?? null;
+  }
+
+  return { orders, loading, placeOrder, getOrderById, refetch: fetchOrders };
 }

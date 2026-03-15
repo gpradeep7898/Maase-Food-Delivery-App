@@ -1,134 +1,90 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors, Typography, Spacing, Radius, Shadows } from '../constants/theme';
-import { CookAvatar } from './ui';
-import { MOCK_MEALS } from '../constants/mockData';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { Colors, Typography, Radius, Spacing, Shadows } from '../lib/theme';
+import { Meal } from '../types';
+import { formatPrice } from '../lib/utils';
 
-const TomorrowSection: React.FC = () => {
-  const [reserved, setReserved] = useState<string[]>([]);
-  const tomorrowMeals = MOCK_MEALS.slice(0, 3);
+const PLACEHOLDER = 'https://placehold.co/200x112/FFF3D4/5C3A21?text=Tomorrow';
 
-  const handleReserve = (mealId: string, mealName: string, cookName: string) => {
-    if (reserved.includes(mealId)) return;
-    Alert.alert(
-      'Reserve for Tomorrow?',
-      `Lock in 1 portion of ${mealName} from ${cookName}. They'll cook it fresh tomorrow.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reserve My Portion 🔒',
-          onPress: () => {
-            setReserved(prev => [...prev, mealId]);
-            Alert.alert('Locked in! 🎉', `${cookName} will cook your ${mealName} tomorrow. You'll get a reminder at 9 AM. 🍛`, [{ text: 'Awesome!' }]);
-          },
-        },
-      ]
-    );
-  };
+interface Props {
+  meals: Meal[];
+  onPreBook: (meal: Meal) => void;
+}
 
+function TomorrowCard({ meal, onPreBook }: { meal: Meal; onPreBook: () => void }) {
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Book for Tomorrow 📅</Text>
-        <Text style={styles.subtitle}>Reserve before cooks stop accepting</Text>
+    <View style={styles.card}>
+      <Image
+        source={{ uri: meal.image_url || PLACEHOLDER }}
+        style={styles.image}
+        contentFit="cover"
+        placeholder={{ uri: PLACEHOLDER }}
+      />
+      <View style={styles.body}>
+        <Text style={styles.name} numberOfLines={2}>{meal.name}</Text>
+        <Text style={styles.chef} numberOfLines={1}>{meal.chef?.kitchen_name}</Text>
+        <View style={styles.footer}>
+          <Text style={styles.price}>{formatPrice(meal.price)}</Text>
+          <TouchableOpacity onPress={onPreBook} style={styles.preBookBtn}>
+            <Text style={styles.preBookText}>Pre-book</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
-        {tomorrowMeals.map(meal => {
-          const isReserved = reserved.includes(meal.id);
-          return (
-            <View key={meal.id} style={styles.card}>
-              <View style={styles.emojiArea}>
-                <Text style={styles.emoji}>{meal.emoji}</Text>
-                <View style={styles.tmrwBadge}>
-                  <Text style={styles.tmrwText}>📅 tmrw</Text>
-                </View>
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.mealName} numberOfLines={2}>{meal.name}</Text>
-                <View style={styles.cookRow}>
-                  <CookAvatar initials={meal.cook.initials} color={meal.cook.avatarColor} size={22} />
-                  <Text style={styles.cookName}>{meal.cook.name}</Text>
-                </View>
-                <View style={styles.cardBottom}>
-                  <Text style={styles.price}>₹{meal.price}</Text>
-                  <TouchableOpacity
-                    style={[styles.btn, isReserved && styles.btnReserved]}
-                    onPress={() => handleReserve(meal.id, meal.name, meal.cook.name)}
-                    disabled={isReserved}
-                  >
-                    <Text style={[styles.btnText, isReserved && styles.btnTextReserved]}>
-                      {isReserved ? 'Reserved ✓' : 'Reserve →'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          );
-        })}
-      </ScrollView>
     </View>
   );
-};
+}
+
+export function TomorrowSection({ meals, onPreBook }: Props) {
+  if (meals.length === 0) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Pre-book for tomorrow 📅</Text>
+      <FlatList
+        data={meals}
+        keyExtractor={item => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <TomorrowCard meal={item} onPreBook={() => onPreBook(item)} />
+        )}
+      />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: { marginBottom: Spacing.md },
-  header: { paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
-  title: { fontFamily: Typography.display, fontSize: Typography.h3, color: Colors.text },
-  subtitle: { fontFamily: Typography.bodyRegular, fontSize: Typography.caption, color: Colors.textMuted, marginTop: 2 },
-  scroll: { paddingHorizontal: Spacing.md, gap: Spacing.sm },
+  section: { marginTop: Spacing.lg },
+  sectionTitle: {
+    fontFamily: Typography.heading,
+    fontSize: 18,
+    color: Colors.mocha,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  list: { paddingHorizontal: Spacing.md, gap: Spacing.sm },
   card: {
-    width: 200,
+    width: 160,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    ...Shadows.card,
+    ...(Shadows.card as object),
   },
-  emojiArea: {
-    height: 90,
+  image: { width: '100%', height: 90 },
+  body: { padding: Spacing.sm },
+  name: { fontFamily: Typography.semiBold, fontSize: 12, color: Colors.mocha, marginBottom: 3 },
+  chef: { fontFamily: Typography.body, fontSize: 11, color: Colors.textMuted, marginBottom: 6 },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  price: { fontFamily: Typography.bold, fontSize: 14, color: Colors.turmericDeep },
+  preBookBtn: {
     backgroundColor: Colors.turmericLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  emoji: { fontSize: 44 },
-  tmrwBadge: {
-    position: 'absolute',
-    bottom: 6,
-    right: 8,
-    backgroundColor: Colors.mocha,
-    borderRadius: Radius.full,
+    borderRadius: Radius.pill,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.turmericDeep + '44',
   },
-  tmrwText: { fontFamily: Typography.bodyBold, fontSize: 9, color: Colors.turmeric },
-  cardBody: { padding: Spacing.sm },
-  mealName: {
-    fontFamily: Typography.display,
-    fontSize: 14,
-    color: Colors.text,
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  cookRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  cookName: { fontFamily: Typography.bodyMedium, fontSize: Typography.caption, color: Colors.textSecondary },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  price: { fontFamily: Typography.display, fontSize: 16, color: Colors.mocha },
-  btn: {
-    backgroundColor: Colors.turmeric,
-    borderRadius: Radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  btnReserved: { backgroundColor: Colors.successLight },
-  btnText: { fontFamily: Typography.bodyBold, fontSize: 11, color: Colors.mocha },
-  btnTextReserved: { color: Colors.success },
+  preBookText: { fontFamily: Typography.semiBold, fontSize: 11, color: Colors.turmericDeep },
 });
-
-export default TomorrowSection;

@@ -3,25 +3,39 @@
     "name": "Maase",
     "slug": "maase",
     "version": "1.0.0",
+    "scheme": "com.maase.customerapp",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#F4A300",
+      "backgroundColor": "#F8F3E8",
       "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.maase.customerapp",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Maase uses your location to find home cooks within 3km."
+        "NSLocationWhenInUseUsageDescription": "Maase uses your location to find home cooks within 3km.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.524815534595-mckipl1bosl07skubas38umui1v2drsu"
+            ]
+          }
+        ]
       }
     },
     "android": {
       "package": "com.maase.customerapp",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#F4A300"
       },
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     },
     "plugins": ["expo-font", "expo-location"]
   }

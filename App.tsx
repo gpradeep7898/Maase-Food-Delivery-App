@@ -1,20 +1,16 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as SplashScreen from 'expo-splash-screen';
-import { useFonts } from 'expo-font';
-import {
-  PlayfairDisplay_700Bold,
-} from '@expo-google-fonts/playfair-display';
+import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import {
   Poppins_400Regular,
   Poppins_500Medium,
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
-import AppNavigator from './src/navigation/AppNavigator';
-
-SplashScreen.preventAutoHideAsync();
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { Colors } from './src/lib/theme';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -25,20 +21,19 @@ export default function App() {
     Poppins_700Bold,
   });
 
-  React.useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
   if (!fontsLoaded) {
-    return null;
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.ivory, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={Colors.turmeric} size="large" />
+      </View>
+    );
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <AppNavigator />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppNavigator />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,35 +1,81 @@
-export type OrderStatus = 'placed' | 'accepted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
+export type UserRole = 'customer' | 'chef' | 'admin' | 'delivery';
+export type MealStatus = 'available' | 'sold_out' | 'hidden';
+export type OrderStatus =
+  | 'placed'
+  | 'accepted'
+  | 'preparing'
+  | 'ready_for_pickup'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
 
-export interface Cook {
+export interface Profile {
   id: string;
-  name: string;
-  initials: string;
-  avatarColor: string;
+  phone: string;
+  full_name?: string;
+  role: UserRole;
+  avatar_url?: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Address {
+  id: string;
+  user_id: string;
+  label: string;
+  flat_no?: string;
+  building?: string;
+  street: string;
+  area: string;
+  city: string;
+  pincode?: string;
+  lat?: number;
+  lng?: number;
+  is_default: boolean;
+}
+
+export interface Chef {
+  id: string;
+  profile_id: string;
+  kitchen_name: string;
+  bio?: string;
+  speciality: string[];
+  avatar_url?: string;
+  cover_image_url?: string;
+  address_line: string;
+  area: string;
+  city: string;
+  lat: number;
+  lng: number;
+  is_open: boolean;
+  is_verified: boolean;
   rating: number;
-  totalOrders: number;
-  cuisine: string;
-  story?: string;
+  total_reviews: number;
+  total_orders: number;
+  created_at?: string;
 }
 
 export interface Meal {
   id: string;
+  chef_id: string;
+  chef?: Chef;
   name: string;
-  description: string;
+  description?: string;
+  image_url?: string;
   price: number;
-  emoji: string;
-  cuisine: string;
-  tags: string[];
-  cook: Cook;
-  distanceKm: number;
-  etaMinutes: number;
-  rating: number;
-  reviewCount: number;
-  items: string[];
-  batchTotal: number;
-  batchRemaining: number;
-  cookedAt: string;
-  isAvailable: boolean;
-  isTomorrow?: boolean;
+  original_price?: number;
+  cuisine_type: string;
+  meal_type: string;
+  is_veg: boolean;
+  is_jain: boolean;
+  serves: number;
+  portions_available: number;
+  status: MealStatus;
+  tags?: string[];
+  scheduled_for?: string;
+  created_at?: string;
 }
 
 export interface CartItem {
@@ -37,45 +83,86 @@ export interface CartItem {
   quantity: number;
 }
 
-export interface Cart {
-  items: CartItem[];
-  subtotal: number;
-  platformFee: number;
-  deliveryFee: number;
-  gst: number;
-  total: number;
-}
-
 export interface Order {
   id: string;
-  meal: Meal;
-  quantity: number;
+  order_number: string;
+  customer_id: string;
+  chef_id: string;
+  chef?: Chef;
+  delivery_address_id?: string;
   status: OrderStatus;
+  subtotal: number;
+  platform_fee: number;
+  delivery_fee: number;
+  gst: number;
   total: number;
-  placedAt: string;
-  deliveryAddress: string;
+  payment_method: string;
+  payment_status: string;
+  payment_ref?: string;
+  estimated_delivery_minutes: number;
+  notes?: string;
+  is_feed_neighbour: boolean;
+  scheduled_for?: string;
+  cancellation_reason?: string;
+  created_at: string;
+  updated_at?: string;
+  order_items?: OrderItem[];
 }
 
-export type DietPreference = 'Vegetarian' | 'Non-Vegetarian' | 'Jain' | 'No Onion-Garlic' | 'Gluten Free' | 'Vegan';
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  meal_id?: string;
+  meal_name: string;
+  meal_price: number;
+  quantity: number;
+  subtotal: number;
+}
 
-export type RootStackParamList = {
+export interface Review {
+  id: string;
+  order_id: string;
+  customer_id: string;
+  chef_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}
+
+export interface UserLocation {
+  lat: number;
+  lng: number;
+  area: string;
+  city: string;
+}
+
+// Navigation param types
+export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
-  Location: undefined;
-  MainTabs: undefined;
+  Onboarding: undefined;
+  ChefSignup: undefined;
+  Location: { fromOnboarding?: boolean };
 };
 
 export type HomeStackParamList = {
-  Home: undefined;
+  HomeMain: undefined;
+  Search: undefined;
+  ChefProfile: { chefId: string };
   MealDetail: { meal: Meal };
   Cart: undefined;
   Payment: undefined;
-  OrderConfirmation: { orderId: string };
+  OrderConfirmation: { orderId: string; orderNumber: string; chefName: string };
+  OrderTracking: { orderId: string };
+};
+
+export type OrdersStackParamList = {
+  OrdersList: undefined;
   OrderTracking: { orderId: string };
 };
 
 export type MainTabParamList = {
-  HomeTab: undefined;
-  OrdersTab: undefined;
-  ProfileTab: undefined;
+  Home: undefined;
+  Orders: undefined;
+  Profile: undefined;
 };
